@@ -14,19 +14,34 @@ from pathlib import Path
 
 
 def parse_frontmatter(content: str):
-    """Parse YAML frontmatter from SKILL.md content using regex (no PyYAML dependency)."""
+    """Parse YAML frontmatter from SKILL.md content using regex (no PyYAML dependency).
+
+    Handles multi-line values using YAML folding (>) and block (|) indicators,
+    as well as continuation lines (indented lines after a key).
+    """
     match = re.match(r"^---\s*\n(.*?)\n---\s*\n", content, re.DOTALL)
     if not match:
         return None, content
     raw = match.group(1)
     body = content[match.end():]
     data = {}
+    current_key = None
     for line in raw.strip().splitlines():
-        kv = line.split(":", 1)
-        if len(kv) == 2:
-            key = kv[0].strip()
-            value = kv[1].strip().strip('"').strip("'")
-            data[key] = value
+        if line and not line[0].isspace():
+            # New key:value pair
+            kv = line.split(":", 1)
+            if len(kv) == 2:
+                current_key = kv[0].strip()
+                value = kv[1].strip().strip('"').strip("'")
+                # Skip YAML folding indicators
+                if value in (">", "|", ">-", "|-"):
+                    data[current_key] = ""
+                else:
+                    data[current_key] = value
+        elif current_key and line.strip():
+            # Continuation line for multi-line value
+            separator = " " if data[current_key] else ""
+            data[current_key] = data[current_key] + separator + line.strip()
     return data, body
 
 
@@ -47,7 +62,14 @@ def validate(skill_dir: str):
         errors.append("SKILL.md not found in skill directory")
         return errors, warnings
 
-    content = skill_md.read_text(encoding="utf-8")
+    try:
+        content = skill_md.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        errors.append("SKILL.md is not valid UTF-8 text")
+        return errors, warnings
+    except OSError as e:
+        errors.append(f"Could not read SKILL.md: {e}")
+        return errors, warnings
 
     # --- Frontmatter checks ---
 
@@ -60,7 +82,7 @@ def validate(skill_dir: str):
         errors.append("Could not parse frontmatter — ensure opening and closing --- on their own lines")
         return errors, warnings
 
-    allowed_keys = {"name", "description", "version"}
+    allowed_keys = {"name", "description", "version", "license", "compatibility", "metadata", "allowed-tools"}
     for key in frontmatter:
         if key not in allowed_keys:
             errors.append(f"Unknown frontmatter key: '{key}' (allowed: {', '.join(sorted(allowed_keys))})")
@@ -92,8 +114,10 @@ def validate(skill_dir: str):
     if not description:
         errors.append("Frontmatter 'description' is required and must not be empty")
     else:
-        if len(description) > 300:
-            errors.append(f"Description is {len(description)} characters (max 300)")
+        if len(description) > 1024:
+            errors.append(f"Description is {len(description)} characters (spec max 1024)")
+        elif len(description) > 300:
+            warnings.append(f"Description is {len(description)} characters; recommend under 300 for readability")
 
         if description.endswith("."):
             warnings.append("Description should not end with a period")
@@ -147,7 +171,11 @@ def validate(skill_dir: str):
     # Reference files over 100 lines should have a TOC
     if refs_dir.is_dir():
         for ref_file in refs_dir.glob("*.md"):
-            ref_content = ref_file.read_text(encoding="utf-8")
+            try:
+                ref_content = ref_file.read_text(encoding="utf-8")
+            except (UnicodeDecodeError, OSError) as e:
+                errors.append(f"Could not read reference file '{ref_file.name}': {e}")
+                continue
             ref_lines = ref_content.strip().splitlines()
             if len(ref_lines) > 100:
                 has_toc = any(

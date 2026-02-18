@@ -11,9 +11,9 @@ Pre-ship validation checklist for skills. Score each item: Yes = 1, No = 0, N/A 
 |---|-------|----|
 | 1 | SKILL.md exists in the skill directory | ⛔ |
 | 2 | SKILL.md starts with valid YAML frontmatter (`---` delimiters) | ⛔ |
-| 3 | Frontmatter contains only allowed keys (`name`, `description`, `version`) | ⛔ |
+| 3 | Frontmatter contains only spec-allowed keys (`name`, `description`, `version`, `license`, `compatibility`, `metadata`, `allowed-tools`) | ⛔ |
 | 4 | `name` is kebab-case and matches directory name | ⛔ |
-| 5 | `description` is under 300 characters | ⛔ |
+| 5 | `description` is under 1024 characters (recommend under 300) | ⛔ |
 | 6 | `description` uses third-person voice | |
 | 7 | `description` includes "Use when" triggers | |
 | 8 | `description` does not end with a period | |

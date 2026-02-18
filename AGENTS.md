@@ -33,10 +33,10 @@ skills/                          ← repo root
 ### Frontmatter (required)
 
 - Must be the first thing in SKILL.md
-- Only allowed keys: `name`, `description`, `version` (optional)
+- Allowed keys: `name` (required), `description` (required), `version` (optional), `license` (optional), `compatibility` (optional), `metadata` (optional), `allowed-tools` (optional)
 - `name`: kebab-case, must match directory name
 - `description`: Third-person voice, no period at end. Formula: `[Does what] for/using [domain]. [Checks/covers what]. Use when [triggers]`
-- Keep description under 300 characters
+- Recommend description under 300 characters for readability (spec maximum: 1024)
 
 ### Body Rules
 

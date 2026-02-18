@@ -1,6 +1,6 @@
 ---
 name: creating-skills
-description: Guides creation of agent skills following best practices and the open format specification. Covers pattern selection, frontmatter, directory layout, reference files, validation, and iteration. Use when creating a new skill, updating SKILL.md, or asking "how to write a skill"
+description: Guides creation of agent skills following best practices and the open format specification. Covers pattern selection, frontmatter, directory structure, reference files, validation, and iteration. Use when creating a new skill, updating SKILL.md, or asking "how to write a skill"
 ---
 
 # Creating Skills
@@ -76,7 +76,13 @@ For example, `creating-skills` is primarily a Guided Workflow but includes:
 
 ### Step 3: Initialize the Skill
 
-Run the scaffolding script to create the directory structure:
+**Quick start** with the official CLI:
+
+```bash
+npx skills init <skill-name>
+```
+
+Or use the enhanced scaffolding script (includes best-practice guidance in the template):
 
 ```bash
 python scripts/init_skill.py <skill-name> --path skills
@@ -97,7 +103,7 @@ Open the generated `SKILL.md` and fill it in:
 
 1. **Frontmatter**: Fill in `name` and `description`
    - Name: kebab-case, must match directory name
-   - Description: third-person voice, under 300 characters, include "Use when" triggers
+   - Description: third-person voice, recommend under 300 characters (spec max 1024), include "Use when" triggers
    - See `references/format-specification.md` for the full spec
 
 2. **Reference Files table**: List every reference file with a "Read When" condition
@@ -145,6 +151,9 @@ The validator checks:
 - No Windows-style paths
 - No deeply nested references
 - Reference files are listed in the body
+
+For official spec compliance, also run: `skills-ref validate skills/<skill-name>`
+(install: `pip install skills-ref`)
 
 **Fix all errors** (blocking). **Review all warnings** (advisory — fix or acknowledge).
 

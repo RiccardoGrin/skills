@@ -37,12 +37,12 @@ Frontmatter is **required** and must be the first thing in the file:
 ```yaml
 ---
 name: creating-skills
-description: Guides creation of agent skills following best practices and the open format specification. Covers pattern selection, frontmatter, directory structure, progressive disclosure, reference files, validation, and iteration. Use when creating a new skill, authoring or updating SKILL.md, structuring a skill bundle, setting up a rules-based audit skill, or asking "how to write a skill"
+description: Guides creation of agent skills following best practices and the open format specification. Covers pattern selection, frontmatter, directory structure, reference files, validation, and iteration. Use when creating a new skill, updating SKILL.md, or asking "how to write a skill"
 version: 1.0.0
 ---
 ```
 
-**Allowed keys**: `name`, `description`, `version` (optional)
+**Allowed keys**: `name` (required), `description` (required), `version` (optional), `license` (optional), `compatibility` (optional), `metadata` (optional), `allowed-tools` (optional)
 
 **Name rules**:
 - kebab-case only: `[a-z][a-z0-9]*(-[a-z0-9]+)*`
@@ -59,13 +59,13 @@ version: 1.0.0
 **Description rules**:
 - Third-person voice ("Guides..." not "Guide...")
 - No trailing period
-- Max 300 characters
+- Recommended under 300 characters for readability. Spec maximum: 1024
 - Formula: `[Does what] for/using [domain]. [Checks/covers what]. Use when [triggers]`
 
 **Description examples**:
 
 ```
-Guides creation of agent skills following best practices and the open format specification. Covers pattern selection, frontmatter, directory structure, progressive disclosure, reference files, validation, and iteration. Use when creating a new skill, authoring or updating SKILL.md, structuring a skill bundle, or asking "how to write a skill"
+Guides creation of agent skills following best practices and the open format specification. Covers pattern selection, frontmatter, directory structure, reference files, validation, and iteration. Use when creating a new skill, updating SKILL.md, or asking "how to write a skill"
 ```
 
 ```
