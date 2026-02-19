@@ -17,6 +17,28 @@ Follow the workflow below step by step. Use the reference files for detailed gui
 | `references/workflow-and-output-patterns.md` | Designing workflows, output formats, or feedback loops |
 | `references/quality-checklist.md` | Running the pre-ship quality checklist |
 | `references/anti-patterns.md` | Reviewing common mistakes to avoid |
+| `references/evaluation-guide.md` | Creating evaluations to measure skill quality objectively |
+
+## Core Principles
+
+Before diving into mechanics, internalize these design principles:
+
+**Context window is a public good.**
+Every token in a skill competes with the user's code, conversation, and other tools.
+Challenge each line with three questions: (1) Does Claude already know this? (2) Will the agent use this on every invocation? (3) Can this live in a reference file instead?
+
+**Degrees of freedom.**
+Match your specificity to the task's tolerance for variation:
+
+| Level | When | Example |
+|-------|------|---------|
+| **High specificity** | Output must be exact (configs, schemas) | "Generate exactly this YAML structure" |
+| **Medium specificity** | Process matters, details vary (workflows) | "Follow these steps, adapt to the project" |
+| **Low specificity** | Agent judgment is the point (reviews, analysis) | "Check for these categories of issues" |
+
+**Claude is already smart.**
+Don't teach programming, well-known APIs, or common patterns.
+Only add context Claude doesn't already have: project conventions, domain rules, non-obvious constraints.
 
 ## Choose a Skill Pattern
 
@@ -48,8 +70,9 @@ Copy this checklist and work through it step by step:
 - [ ] Step 4: Write the SKILL.md body
 - [ ] Step 5: Add reference files
 - [ ] Step 6: Validate
-- [ ] Step 7: Test with real usage
-- [ ] Step 8: Iterate
+- [ ] Step 7: Create evaluations
+- [ ] Step 8: Test with real usage
+- [ ] Step 9: Iterate
 ```
 
 ### Step 1: Understand the Skill
@@ -161,7 +184,18 @@ If errors persist after 3 attempts, review `references/anti-patterns.md` for com
 
 Also run through the manual `references/quality-checklist.md` for items the automated validator cannot check (content quality, token efficiency, terminology consistency).
 
-### Step 7: Test with Real Usage
+### Step 7: Create Evaluations
+
+Before testing, define what success looks like.
+Write 3–5 evaluation cases that cover the happy path, an edge case, and a failure mode you anticipate.
+See `references/evaluation-guide.md` for the full methodology and JSON format.
+
+Key steps:
+1. **Establish a baseline**: Complete the target task **without** the skill installed. Record where the agent struggles.
+2. **Write evaluation cases**: Each is a prompt + expected behaviors checklist.
+3. **Score the baseline**: This is the bar your skill must beat.
+
+### Step 8: Test with Real Usage
 
 Automated validation catches format issues but not usability problems. Test with real tasks:
 
@@ -170,19 +204,33 @@ Automated validation catches format issues but not usability problems. Test with
 3. **Trigger naturally**: Use a prompt that would naturally activate the skill
 4. **Evaluate the output**: Did the agent follow the workflow? Was the output correct?
 
+**What to observe** during testing:
+- Does the agent explore unexpected paths not covered by the skill?
+- Does the agent miss connections between sections that seem obvious to you?
+- Does the agent over-rely on one section while ignoring others?
+- Is there content the agent consistently skips or ignores?
+
 **Multi-model testing**: Test with at least two capability levels:
 - **Haiku**: Can the skill work with a smaller model? Simplify if not.
 - **Sonnet/Opus**: Does the skill produce high-quality output with a capable model?
 
 If the skill fails or produces poor output, go back to Step 4 and revise.
 
-### Step 8: Iterate
+### Step 9: Iterate
 
-Skills improve through real usage and feedback. Use the Claude A/B pattern:
+Skills improve through real usage and feedback.
+
+**Establish a baseline first**: If you haven't already (Step 7), complete the target task without the skill to see what the agent does on its own.
+This reveals which parts of your skill actually add value vs. what the agent already handles.
+
+**Use the Claude A/B pattern**:
 
 1. **Claude A**: Use the skill as-is with a real task. Note where it struggles.
 2. **Claude B**: Open a new session. Describe the problems. Ask Claude B to suggest improvements to the SKILL.md.
 3. **Apply and re-test**: Incorporate the suggestions, then repeat from Step 6.
+
+**Gather team feedback**: If others use the skill, ask them what worked and what didn't.
+Different users trigger skills differently — their experience reveals gaps your testing missed.
 
 This external feedback loop catches blind spots that self-review misses.
 

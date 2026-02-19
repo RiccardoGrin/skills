@@ -1,9 +1,25 @@
+# OS
 .DS_Store
+Thumbs.db
+
+# Editors
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Logs
 *.log
 *.tmp
-*.swp
-node_modules/
+
+# Environment
 .env
 .env.*
+
+# Dependencies
+node_modules/
+
+# Python
 __pycache__/
 *.pyc

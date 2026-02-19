@@ -92,6 +92,12 @@ def validate(skill_dir: str):
     if not name:
         errors.append("Frontmatter 'name' is required and must not be empty")
     else:
+        if len(name) > 64:
+            errors.append(f"Name is {len(name)} characters (max 64)")
+
+        if re.search(r"[<>]", name):
+            errors.append("Name must not contain XML angle brackets (< or >)")
+
         if not re.match(r"^[a-z][a-z0-9]*(-[a-z0-9]+)*$", name):
             errors.append(f"Name '{name}' is not valid kebab-case (e.g., 'creating-skills', 'analyzing-data')")
 
@@ -114,6 +120,9 @@ def validate(skill_dir: str):
     if not description:
         errors.append("Frontmatter 'description' is required and must not be empty")
     else:
+        if re.search(r"[<>]", description):
+            errors.append("Description must not contain XML angle brackets (< or >)")
+
         if len(description) > 1024:
             errors.append(f"Description is {len(description)} characters (spec max 1024)")
         elif len(description) > 300:

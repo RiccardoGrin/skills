@@ -12,6 +12,7 @@
   - [Examples Pattern](#examples-pattern)
   - [Verifiable Intermediate Outputs](#verifiable-intermediate-outputs)
 - [Combining Patterns](#combining-patterns)
+- [Concrete Examples](#concrete-examples)
 
 ## Workflow Patterns
 
@@ -219,3 +220,57 @@ Most real skills combine multiple patterns. Common combinations:
 | Plan-Validate-Execute | Verifiable Outputs | Plan with checkpoints at each phase |
 
 When combining, use the primary pattern for the overall structure and embed secondary patterns within individual steps.
+
+## Concrete Examples
+
+### Research Synthesis (Sequential + Template)
+
+A non-code skill that gathers information and produces a structured summary:
+
+```markdown
+## Workflow
+
+- [ ] **Step 1: Define the research question**
+  Ask the user what they want to understand. Identify 2–3 sub-questions.
+
+- [ ] **Step 2: Gather sources**
+  Search the codebase, docs, and external references. Collect key findings.
+
+- [ ] **Step 3: Synthesize**
+  Produce the summary using this format:
+
+  ## Research Summary: {{topic}}
+
+  ### Key Findings
+  - Finding 1 (source: ...)
+  - Finding 2 (source: ...)
+
+  ### Recommendations
+  1. Recommendation with rationale
+  2. Recommendation with rationale
+
+  ### Open Questions
+  - What remains unclear
+```
+
+### PDF Form Filling (Conditional + Scaffolding)
+
+A code skill that fills PDF forms from structured data:
+
+```markdown
+## Choose Your Approach
+
+| Signal | Action |
+|--------|--------|
+| User provides JSON data | Map fields directly |
+| User provides CSV | Convert to JSON first, then map |
+| User describes fields verbally | Generate JSON schema, confirm, then fill |
+
+## Generation Workflow
+
+1. Read the PDF form to identify field names
+2. Map input data to form fields
+3. Run: `python scripts/fill_pdf.py --template assets/form.pdf --data input.json`
+4. Validate: open the output PDF and verify all fields are filled
+5. Report any unmapped fields as warnings
+```

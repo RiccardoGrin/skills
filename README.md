@@ -10,9 +10,11 @@ npx skills add grino/skills
 
 ## Available Skills
 
-| Skill | Phase | What it does |
-|-------|-------|--------------|
+| Skill | Maturity | What it does |
+|-------|----------|--------------|
 | `creating-skills` | Stable | Guides creation of agent skills following best practices and the open format specification |
+
+> **Maturity** indicates development status: *Draft* (in progress), *Beta* (usable, feedback welcome), *Stable* (production-ready).
 
 ## Supported Agents
 

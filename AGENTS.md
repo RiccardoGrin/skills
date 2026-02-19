@@ -1,23 +1,24 @@
 # AGENTS.md
 
-> This file and CLAUDE.md should be kept in sync. If you edit one, update the other.
+> CLAUDE.md is a symlink to this file. Edit AGENTS.md only — CLAUDE.md will stay in sync automatically.
 
 ## Project Overview
 
-This is a **content-only** repository of reusable agent skills. No package.json — skills are installed via `npx skills add <username>/skills`. The CLI scans for `SKILL.md` files inside `skills/` directories.
+This is a **content-only** repository of reusable agent skills. No package.json — skills are installed via `npx skills add <username>/skills` or manually via `cp -R skills/* ~/.claude/skills/`. The CLI scans for `SKILL.md` files inside `skills/` directories.
 
 ## Project Structure
 
 ```
 skills/                          ← repo root
 ├── AGENTS.md                    ← you are here
-├── CLAUDE.md                    ← copy of AGENTS.md (keep in sync)
+├── CLAUDE.md                    ← symlink to AGENTS.md
 ├── README.md
 └── skills/
     └── <skill-name>/
         ├── SKILL.md             ← required entry point
         ├── references/          ← supporting docs loaded on demand
-        └── scripts/             ← helper scripts (optional)
+        ├── scripts/             ← helper scripts (optional)
+        └── assets/              ← output files (optional, not loaded into context)
 ```
 
 ## Coding Style & Naming Conventions
@@ -34,16 +35,18 @@ skills/                          ← repo root
 
 - Must be the first thing in SKILL.md
 - Allowed keys: `name` (required), `description` (required), `version` (optional), `license` (optional), `compatibility` (optional), `metadata` (optional), `allowed-tools` (optional)
-- `name`: kebab-case, must match directory name
-- `description`: Third-person voice, no period at end. Formula: `[Does what] for/using [domain]. [Checks/covers what]. Use when [triggers]`
+- `name`: kebab-case, must match directory name, max 64 characters, no XML angle brackets (`<`, `>`)
+- `description`: Third-person voice, no period at end, no XML angle brackets. Formula: `[Does what] for/using [domain]. [Checks/covers what]. Use when [triggers]`
 - Recommend description under 300 characters for readability (spec maximum: 1024)
 
 ### Body Rules
 
 - Target 150–300 lines for the main SKILL.md body
 - Hard limit: 500 lines (agents lose focus beyond this)
+- Only add context Claude doesn't already have — skip common programming knowledge, well-known APIs, and basic language syntax
 - Use progressive disclosure: put details in reference files, link from body
 - Every referenced file must be listed in a "Reference Files" table
+- Complex multi-step skills should include a copyable progress checklist
 - No "when to use" info in body — that belongs in the description
 - No auxiliary docs (README, CHANGELOG) inside skill directories
 
@@ -81,3 +84,5 @@ skills/                          ← repo root
 - Periodically review skills against the latest best practices docs
 - Keep reference files up to date when the format specification changes
 - Archive deprecated skills by moving them to an `_archived/` directory
+- When adding or removing a skill, update the Available Skills table in `README.md`
+- When renaming folders or reference files, grep `AGENTS.md` and all `SKILL.md` files for stale paths

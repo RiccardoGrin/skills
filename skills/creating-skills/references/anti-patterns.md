@@ -16,6 +16,8 @@ Common mistakes when authoring skills. Avoid these.
 - [Unlisted Reference Files](#unlisted-reference-files)
 - [Over-Engineering](#over-engineering)
 - [Under-Specifying Critical Operations](#under-specifying-critical-operations)
+- [Assuming Tools Are Installed](#assuming-tools-are-installed)
+- [Punting Errors to the Agent](#punting-errors-to-the-agent)
 
 ## Over-Explaining
 
@@ -74,6 +76,18 @@ As of January 2025, the recommended Node.js version is 20.x.
 
 <!-- Good -->
 Use the current LTS version of Node.js (check nodejs.org for the latest).
+```
+
+**Alternative**: For content that ages but is still useful, use a `<details>` tag so it doesn't consume primary attention:
+
+```markdown
+<details>
+<summary>Version-specific notes (may be outdated)</summary>
+
+As of Node.js 20.x, the `--experimental-vm-modules` flag is required for ESM in vm contexts.
+Check the Node.js docs for the current status of this flag.
+
+</details>
 ```
 
 ## Inconsistent Terminology
@@ -144,4 +158,39 @@ Clean up the old files.
 
 <!-- Good -->
 Delete files matching `*.tmp` in the `build/` directory. This does not affect source files.
+```
+
+## Assuming Tools Are Installed
+
+**Problem**: Skills that reference MCP tools, CLI tools, or language runtimes without checking availability. The agent invokes a tool that doesn't exist and produces a confusing error.
+
+**Fix**: Check for tool availability before using it, or provide a fallback.
+
+```markdown
+<!-- Bad -->
+Run `GitHub:create_pull_request` to open the PR.
+
+<!-- Good -->
+If the GitHub MCP server is available, run `GitHub:create_pull_request`.
+Otherwise, use `gh pr create` from the command line.
+If neither is available, provide the user with the PR URL to create manually.
+```
+
+## Punting Errors to the Agent
+
+**Problem**: Scripts that fail silently or with generic errors, leaving the agent to guess what went wrong. The script should solve the problem or give actionable diagnostics — not just fail.
+
+**Fix**: Scripts should handle errors explicitly, provide clear messages, and suggest next steps.
+
+```python
+# Bad: generic error, agent has no idea what to fix
+if not valid:
+    sys.exit(1)
+
+# Good: specific error with guidance
+if not frontmatter.get("name"):
+    print("Error: 'name' is required in frontmatter.")
+    print("  Add a kebab-case name matching the directory name.")
+    print("  Example: name: analyzing-data")
+    sys.exit(1)
 ```

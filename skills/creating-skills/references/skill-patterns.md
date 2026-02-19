@@ -7,6 +7,8 @@
 - [Pattern 2: Rules-Based Audit](#pattern-2-rules-based-audit)
 - [Pattern 3: Scaffolding / Generation](#pattern-3-scaffolding--generation)
 - [Pattern 4: Knowledge Reference](#pattern-4-knowledge-reference)
+- [Pattern 5: Hub / Dispatch](#pattern-5-hub--dispatch)
+- [Progressive Disclosure Patterns](#progressive-disclosure-patterns)
 - [Choosing a Pattern](#choosing-a-pattern)
 
 ## Pattern Overview
@@ -81,7 +83,7 @@ For checking code or content against a set of rules.
 
 **When to use**: The task is about reviewing, validating, or enforcing standards.
 
-**Directory structure**:
+**Directory structure** (small rule set — single file):
 ```
 skills/<skill-name>/
 ├── SKILL.md
@@ -89,6 +91,23 @@ skills/<skill-name>/
     ├── rules.md
     └── examples.md
 ```
+
+**Directory structure** (large rule set — individual rule files):
+```
+skills/<skill-name>/
+├── SKILL.md
+└── references/
+    ├── rules/
+    │   ├── _sections.md        ← defines rule categories and ordering
+    │   ├── _template.md        ← template for adding new rules
+    │   ├── naming-conventions.md
+    │   ├── import-ordering.md
+    │   └── error-handling.md
+    └── examples.md
+```
+
+Use the `rules/` subfolder when you have 10+ rules that are independently maintained.
+The `_sections.md` file maps categories to rule files. The `_template.md` provides a consistent format for contributors.
 
 **SKILL.md skeleton**:
 ```markdown
@@ -142,8 +161,11 @@ skills/<skill-name>/
 ├── SKILL.md
 ├── references/
 │   └── templates.md
-└── scripts/
-    └── scaffold.py
+├── scripts/
+│   └── scaffold.py
+└── assets/               ← template files used in output (not loaded into context)
+    ├── template.yaml
+    └── config.json
 ```
 
 **SKILL.md skeleton**:
@@ -226,6 +248,96 @@ How to apply this reference in practice.
 
 **Real-world examples**: `mapping-status-codes`, `converting-units`, `translating-error-codes`
 
+## Pattern 5: Hub / Dispatch
+
+For skills that route to different tracks or sub-workflows based on context.
+
+**When to use**: The skill covers a broad domain with distinct sub-areas (e.g., "setting up infrastructure" with tracks for AWS, GCP, and Azure). The SKILL.md acts as a thin router, dispatching to track-specific reference files.
+
+**Directory structure**:
+```
+skills/<skill-name>/
+├── SKILL.md              ← routing logic only
+└── references/
+    ├── track-aws.md
+    ├── track-gcp.md
+    └── track-azure.md
+```
+
+**SKILL.md skeleton**:
+```markdown
+---
+name: configuring-infrastructure
+description: Guides infrastructure setup across cloud providers. Covers AWS, GCP, and Azure. Use when setting up cloud infrastructure, configuring providers, or choosing a cloud platform
+---
+
+# Configuring Infrastructure
+
+## Reference Files
+
+| File | Read When |
+|------|-----------|
+| `references/track-aws.md` | Project uses or will use AWS |
+| `references/track-gcp.md` | Project uses or will use GCP |
+| `references/track-azure.md` | Project uses or will use Azure |
+
+## Choose a Track
+
+| Signal | Track |
+|--------|-------|
+| `aws-cdk.json` or `serverless.yml` present | AWS |
+| `app.yaml` or `cloudbuild.yaml` present | GCP |
+| `azure-pipelines.yml` or `bicep` files present | Azure |
+| No signals found | Ask the user |
+
+Detect the project's cloud provider, then read the corresponding track file.
+Each track is self-contained — do not load multiple tracks unless explicitly asked.
+```
+
+**Real-world examples**: `configuring-infrastructure`, `setting-up-ci`, `managing-deployments`
+
+## Progressive Disclosure Patterns
+
+Three concrete patterns for keeping SKILL.md lean while making detail available on demand:
+
+### High-Level Guide with References
+
+The SKILL.md provides an overview and decision framework. Detailed instructions live in reference files.
+
+```markdown
+## Workflow
+- [ ] Step 1: Choose approach (see decision table below)
+- [ ] Step 2: Implement — read `references/detailed-steps.md` for your chosen approach
+- [ ] Step 3: Validate — run `python scripts/validate.py`
+```
+
+Best for: Guided Workflow skills where each step has substantial detail.
+
+### Domain-Specific Organization
+
+Group reference files by domain area. The agent loads only the relevant area.
+
+```markdown
+| File | Read When |
+|------|-----------|
+| `references/frontend-rules.md` | Reviewing frontend code |
+| `references/backend-rules.md` | Reviewing backend code |
+| `references/database-rules.md` | Reviewing database queries |
+```
+
+Best for: Rules-Based Audit skills covering multiple domains.
+
+### Conditional Detail Loading
+
+Include brief inline guidance with a pointer to the full version. The agent reads the reference only when the brief version isn't enough.
+
+```markdown
+**Quick rule**: Use `async/await` over raw promises. For the complete async patterns guide
+including error boundaries and retry logic, read `references/async-patterns.md`.
+```
+
+Best for: Knowledge Reference skills where most queries need a quick answer but some need depth.
+
 ## Choosing a Pattern
 
 Ask these questions:
@@ -234,6 +346,7 @@ Ask these questions:
 2. **Is the task about checking/validating?** → Rules-Based Audit
 3. **Does it produce files from templates?** → Scaffolding / Generation
 4. **Is it primarily informational?** → Knowledge Reference
+5. **Does it cover a broad domain with distinct tracks?** → Hub / Dispatch
 
 If the task spans multiple patterns, use the **primary** pattern and incorporate elements from others.
 For example, a `creating-skills` skill uses Guided Workflow as the primary pattern but includes Rules-Based Audit elements (validation checklist) and Scaffolding elements (init script).

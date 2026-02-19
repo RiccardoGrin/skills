@@ -51,24 +51,29 @@ Pre-ship validation checklist for skills. Score each item: Yes = 1, No = 0, N/A 
 | 25 | Scripts use only the standard library (no pip/npm installs) | ⛔ |
 | 26 | Scripts work cross-platform (no `chmod`, no OS-specific paths) | |
 | 27 | Scripts have usage instructions in docstring or `--help` | |
+| 28 | Scripts handle errors explicitly with actionable messages (don't punt to the agent) | |
+| 29 | No unexplained magic constants — named variables or comments for non-obvious values | |
+| 30 | Quality-critical operations include feedback loops (validate → fix → re-validate) | |
 
 ## Testing & Evaluation
 
 | # | Check | ⛔ |
 |---|-------|----|
-| 28 | Tested with a real task (not just reading the skill) | |
-| 29 | Tested with at least two model tiers (e.g., Haiku + Sonnet) | |
-| 30 | Validator passes with no errors | ⛔ |
-| 31 | Skill activates when triggered by natural language prompts | |
-| 32 | Output quality matches expectations for the task | |
+| 31 | Tested with a real task (not just reading the skill) | |
+| 32 | Tested with at least two model tiers (e.g., Haiku + Sonnet) | |
+| 33 | Validator passes with no errors | ⛔ |
+| 34 | Skill activates when triggered by natural language prompts | |
+| 35 | Output quality matches expectations for the task | |
+| 36 | At least 3 formal evaluations created (see `references/evaluation-guide.md`) | |
+| 37 | Team or peer feedback incorporated (if available) | |
 
 ## Token Efficiency
 
 | # | Check | ⛔ |
 |---|-------|----|
-| 33 | No information that Claude already knows (common language syntax, well-known APIs) | |
-| 34 | Reference files are loaded conditionally, not all at once | |
-| 35 | Examples are concise (2–4 per section, not exhaustive lists) | |
+| 38 | No information that Claude already knows (common language syntax, well-known APIs) | |
+| 39 | Reference files are loaded conditionally, not all at once | |
+| 40 | Examples are concise (2–4 per section, not exhaustive lists) | |
 
 ## Scoring
 

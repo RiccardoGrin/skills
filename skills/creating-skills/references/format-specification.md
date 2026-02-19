@@ -8,7 +8,9 @@
 - [Body](#body)
 - [Reference Files](#reference-files)
 - [Naming Conventions](#naming-conventions)
+- [Scripts](#scripts)
 - [Content Guidelines](#content-guidelines)
+- [License](#license)
 
 ## Directory Structure
 
@@ -20,12 +22,16 @@ skills/<skill-name>/
 ├── references/           ← supporting docs (optional)
 │   ├── format-spec.md
 │   └── patterns.md
-└── scripts/              ← helper scripts (optional)
-    └── validate.py
+├── scripts/              ← helper scripts (optional)
+│   └── validate.py
+└── assets/               ← files used in output (optional)
+    ├── template.html
+    └── icon.png
 ```
 
 - `SKILL.md` is the only required file
 - `references/` must be one level deep only (no nesting)
+- `assets/` holds files used in output (templates, images, icons) — these are NOT loaded into context automatically, only referenced when needed by scripts or the agent
 - No auxiliary files (`README.md`, `CHANGELOG.md`) inside the skill directory
 
 ## SKILL.md Format
@@ -46,8 +52,11 @@ version: 1.0.0
 
 **Name rules**:
 - kebab-case only: `[a-z][a-z0-9]*(-[a-z0-9]+)*`
+- Maximum 64 characters
 - Must match the directory name exactly
 - Prefer gerund form for the first word
+- Must not contain XML angle brackets (`<`, `>`)
+- Must not contain reserved words: `anthropic`, `claude`, `openai`, `cursor`
 
 | Good | Avoid |
 |------|-------|
@@ -59,6 +68,7 @@ version: 1.0.0
 **Description rules**:
 - Third-person voice ("Guides..." not "Guide...")
 - No trailing period
+- Must not contain XML angle brackets (`<`, `>`)
 - Recommended under 300 characters for readability. Spec maximum: 1024
 - Formula: `[Does what] for/using [domain]. [Checks/covers what]. Use when [triggers]`
 
@@ -95,6 +105,14 @@ Run `GitHub:create_pull_request` to open the PR.
 
 ## Reference Files
 
+Skills use a three-level progressive disclosure model:
+
+1. **Metadata** (~100 words: name + description) — always loaded by the agent for matching
+2. **SKILL.md body** (150–300 lines) — loaded when the skill is triggered
+3. **Reference files** (unlimited) — loaded on demand when specific conditions are met
+
+This layered design keeps context window usage minimal while making detailed guidance available when needed.
+
 - Place in `references/` subdirectory
 - One level deep only — no nested directories
 - Every reference file must be listed in the SKILL.md body
@@ -119,6 +137,14 @@ Run `GitHub:create_pull_request` to open the PR.
 | Python scripts | snake_case | `validate_skill.py` |
 | Paths in content | forward slashes only | `references/patterns.md` |
 
+## Scripts
+
+- Scripts live in the `scripts/` subdirectory
+- Must use only the language's standard library (no external dependencies)
+- Scripts can be **executed without being loaded into context**, saving tokens — prefer scripts for validation, scaffolding, and other automatable tasks
+- Must work cross-platform (no `chmod`, no OS-specific paths)
+- Include usage instructions via docstring or `--help`
+
 ## Content Guidelines
 
 - **No time-sensitive information**: Avoid "as of 2024" or version-specific claims that will age
@@ -126,3 +152,17 @@ Run `GitHub:create_pull_request` to open the PR.
 - **Forward slashes only**: Never use backslash paths, even in Windows examples
 - **No external dependencies**: Scripts must use only the language's standard library
 - **Content freshness**: Prefer linking to authoritative sources over duplicating information that changes
+
+## License
+
+If your skill has specific licensing requirements, include a `LICENSE.txt` in the skill directory and reference it in the frontmatter:
+
+```yaml
+---
+name: my-skill
+description: ...
+license: MIT
+---
+```
+
+For most skills in a shared repository, the repository-level LICENSE applies and no per-skill license file is needed.
