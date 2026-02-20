@@ -5,7 +5,7 @@ Reusable agent skills for Claude Code, Cursor, Codex, and OpenCode.
 ## Quick Start
 
 ```bash
-npx skills add grino/skills
+npx skills add RiccardoGrin/skills
 ```
 
 ## Available Skills
