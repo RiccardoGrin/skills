@@ -230,6 +230,7 @@ Write the completed plan to a markdown file so it survives beyond this session.
 - Otherwise, write to the project directory (e.g., `docs/plans/<feature-name>.md`)
 - The plan must be a standalone document — readable and actionable in a future session without conversation history
 
+- A subagent review turns up no issues
 ### Phase 5: Plan Review
 
 Before delivering the plan, verify:
