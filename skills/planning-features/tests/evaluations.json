@@ -1,0 +1,71 @@
+{
+  "evaluations": [
+    {
+      "id": "eval-001",
+      "name": "Happy path — full planning workflow",
+      "prompt": "Plan a feature: add user notifications to a Next.js app with a PostgreSQL database. Users should receive in-app notifications for comments on their posts and be able to mark them as read.",
+      "expected_behaviors": [
+        "Conducts discovery interview with concrete options and tradeoffs",
+        "Asks about real-time vs polling, notification preferences, and UI placement",
+        "Performs codebase analysis identifying relevant files and patterns",
+        "Produces a plan with specific file paths, targets, actions, and reasoning",
+        "Includes dependency ordering between changes",
+        "Lists concrete edge cases with mitigations",
+        "Writes testable validation criteria",
+        "Persists plan to a markdown file"
+      ],
+      "scoring": {
+        "method": "checklist",
+        "pass_threshold": 6
+      }
+    },
+    {
+      "id": "eval-002",
+      "name": "Light planning — scope check triggers short outline",
+      "prompt": "Plan a feature: rename the 'Settings' nav item to 'Preferences' across the app.",
+      "expected_behaviors": [
+        "Recognizes this as light planning scope (single concern, clear requirements)",
+        "Does NOT conduct a full multi-phase planning workflow",
+        "Provides a brief outline: what files, what changes, why",
+        "Skips research phase entirely"
+      ],
+      "scoring": {
+        "method": "checklist",
+        "pass_threshold": 3
+      }
+    },
+    {
+      "id": "eval-003",
+      "name": "Stress-test round handling",
+      "prompt": "Plan a feature: add role-based access control (RBAC) to an existing Express API. The API currently has no auth beyond API keys. Roles needed: admin, editor, viewer. After planning, run the stress-test rounds.",
+      "expected_behaviors": [
+        "Produces a complete plan before stress-testing",
+        "Launches stress-test subagents with ONLY the plan text, not conversation history",
+        "Presents subagent findings to the user after each round",
+        "Asks the user which findings to address before incorporating",
+        "Incorporates accepted feedback into the plan",
+        "Runs up to 3 rounds (stops early if no issues found)"
+      ],
+      "scoring": {
+        "method": "checklist",
+        "pass_threshold": 4
+      }
+    },
+    {
+      "id": "eval-004",
+      "name": "Edge case — user says skip research",
+      "prompt": "Plan a feature: add dark mode toggle to a React app. Skip the research phase, I already know what I want — just a CSS variables approach with a toggle button in the header.",
+      "expected_behaviors": [
+        "Respects the user's request to skip research",
+        "Does NOT launch research sub-agents",
+        "Still conducts discovery interview for remaining ambiguities (persistence, system preference detection, transition animations)",
+        "Produces a plan that uses the user's specified approach (CSS variables)",
+        "Does not override user's stated preferences with research-based alternatives"
+      ],
+      "scoring": {
+        "method": "checklist",
+        "pass_threshold": 4
+      }
+    }
+  ]
+}

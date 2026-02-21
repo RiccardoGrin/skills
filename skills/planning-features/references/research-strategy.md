@@ -74,7 +74,7 @@ For UI/UX features, understand established interaction patterns.
 
 - Standard interaction patterns (drag-and-drop, inline editing, multi-select, etc.)
 - Animation and transition conventions for the type of interaction
-- Responsive behaviour expectations
+- Responsive behavior expectations
 - Keyboard navigation and screen reader patterns
 
 ## Using Sub-Agents

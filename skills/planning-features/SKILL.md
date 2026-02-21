@@ -7,7 +7,7 @@ description: Creates implementation-ready plans through discovery interviews, ex
 
 Create concrete, implementation-ready plans for features and complex changes.
 
-DO NOT write code during planning. Only explore, research, analyse, and document.
+DO NOT write code during planning. Only explore, research, analyze, and document.
 
 ## Reference Files
 
@@ -58,7 +58,7 @@ Don't ask — inform.
 **Question domains** (not exhaustive — use judgment):
 
 - Problem definition and success criteria
-- User-facing behaviour and interaction design
+- User-facing behavior and interaction design
 - Edge cases, error states, and failure modes
 - Performance, scale, and data implications
 - Accessibility and internationalization concerns
@@ -134,7 +134,7 @@ Synthesize discovery, research, and analysis into an implementation-ready plan.
 
 **Plan output format (flat list):**
 
-```
+```markdown
 ## Goal
 [One sentence: what we're building and why]
 
@@ -166,7 +166,7 @@ Synthesize discovery, research, and analysis into an implementation-ready plan.
 
 **Plan output format (phased grouping):**
 
-```
+```markdown
 ## Goal
 [One sentence: what we're building and why]
 
@@ -222,7 +222,7 @@ For complex features, include test descriptions in the Validation section: what 
 
 Keep the plan file updated as implementation proceeds — it becomes the source of truth.
 
-### Persist the Plan
+#### Persist the Plan
 
 Write the completed plan to a markdown file so it survives beyond this session.
 
@@ -230,7 +230,7 @@ Write the completed plan to a markdown file so it survives beyond this session.
 - Otherwise, write to the project directory (e.g., `docs/plans/<feature-name>.md`)
 - The plan must be a standalone document — readable and actionable in a future session without conversation history
 
-### Phase 4b: Spec Stress-Test
+### Phase 5: Spec Stress-Test
 
 After constructing the plan, stress-test it with fresh perspectives. This catches blind spots, underspecified areas, and risks that confirmation bias hides.
 
@@ -252,7 +252,7 @@ After each round:
 
 **Key constraint:** Each subagent must receive ONLY the plan document, not the conversation history. The value comes from fresh eyes with zero context about the decisions that led to the plan.
 
-### Phase 5: Plan Review
+### Phase 6: Plan Review
 
 Before delivering the plan, verify:
 

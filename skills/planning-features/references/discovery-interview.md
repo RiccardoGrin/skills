@@ -36,7 +36,7 @@ Surface the real problem, not just the requested solution.
 - Is there a deadline or dependency driving this?
 - What happens if we don't build this?
 
-### Behaviour & Interaction
+### Behavior & Interaction
 
 For user-facing features — how should it look and feel?
 
@@ -44,7 +44,7 @@ For user-facing features — how should it look and feel?
 - What should happen on error? (specific scenarios, not generic "show an error")
 - Are there loading states, empty states, or progressive disclosure needs?
 - How should this interact with existing features? (navigation, data flow, state)
-- Are there accessibility requirements beyond baseline? (screen readers, keyboard nav, colour contrast)
+- Are there accessibility requirements beyond baseline? (screen readers, keyboard nav, color contrast)
 
 ### Edge Cases & Failure Modes
 
