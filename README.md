@@ -13,7 +13,7 @@ npx skills add RiccardoGrin/skills
 | Skill | Maturity | What it does |
 |-------|----------|--------------|
 | `creating-skills` | Stable | Guides creation of agent skills following best practices and the open format specification |
-| `planning-features` | Beta | Creates implementation-ready plans through discovery interviews, external research, and codebase analysis |
+| `planning` | Beta | Creates implementation-ready plans through discovery interviews, external research, and codebase analysis |
 
 > **Maturity** indicates development status: *Draft* (in progress), *Beta* (usable, feedback welcome), *Stable* (production-ready).
 

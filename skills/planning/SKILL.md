@@ -1,6 +1,6 @@
 ---
-name: planning-features
-description: Creates implementation-ready plans through discovery interviews, external research, and codebase analysis. Covers requirements, competitor research, architecture decisions, and change sequencing. Use when planning a feature, creating a spec, or when changes need discovery before coding
+name: planning
+description: Creates implementation-ready plans through discovery interviews, external research, and codebase analysis. Covers requirements, competitor research, architecture decisions, and change sequencing. Use when planning features, roadmaps, specs, or any work that needs discovery before coding
 ---
 
 # Feature Planning
