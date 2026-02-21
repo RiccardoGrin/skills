@@ -230,7 +230,28 @@ Write the completed plan to a markdown file so it survives beyond this session.
 - Otherwise, write to the project directory (e.g., `docs/plans/<feature-name>.md`)
 - The plan must be a standalone document — readable and actionable in a future session without conversation history
 
+### Phase 4b: Spec Stress-Test
+
+After constructing the plan, stress-test it with fresh perspectives. This catches blind spots, underspecified areas, and risks that confirmation bias hides.
+
+**Process (3 rounds):**
+
+For each round, spawn a Task subagent (subagent_type: "general-purpose") with:
+- ONLY the plan text (the subagent has no conversation history — this is the point)
+- The prompt: "You are reviewing a feature implementation plan. Find 5-10 points that are underspecified, ambiguous, risky, or missing. Be specific — reference the exact section and explain what's unclear or could go wrong. Don't suggest rewrites — just identify the gaps."
+
+After each round:
+1. Present the subagent's findings to the user
+2. Ask which findings to address (some may be intentional simplifications)
+3. Incorporate accepted feedback into the plan before the next round
+
+**When to skip:**
+- Light planning (single-file, clear scope)
+- User explicitly says to skip refinement
 - A subagent review turns up no issues
+
+**Key constraint:** Each subagent must receive ONLY the plan document, not the conversation history. The value comes from fresh eyes with zero context about the decisions that led to the plan.
+
 ### Phase 5: Plan Review
 
 Before delivering the plan, verify:
