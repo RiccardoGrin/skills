@@ -7,7 +7,7 @@ description: Creates implementation-ready plans through discovery interviews, ex
 
 Create concrete, implementation-ready plans for features and complex changes.
 
-DO NOT write code during planning. Only explore, research, analyze, and document.
+DO NOT write code during planning. Only explore, research, analyze, and document. Be thorough.
 
 ## Reference Files
 
@@ -34,9 +34,13 @@ Conduct a thorough interview to surface requirements, constraints, and context t
 
 **How to interview:**
 
-- One question at a time — wait for the user's response before moving on
-- Present 2-4 concrete options with tradeoffs for each
-- Always include your recommendation with clear reasoning
+- Present questions with selectable options — don't ask open-ended questions when you can offer concrete choices
+- **Batch related questions together.** Ask up to 4 independent questions at once, each displayed as its own tab with its own set of options. This reduces back-and-forth and respects the user's time
+  - Each question should have a short label (the tab title) and 2-4 options with descriptions explaining tradeoffs
+  - Allow multiple selections when choices aren't mutually exclusive
+- **When to batch**: Group questions that are related but independent — answering one doesn't change the others. Example: "Auth method" + "Session storage" + "Token format" can be asked together
+- **When to ask separately**: Ask one at a time when the answer to one question changes what you'd ask next
+- Always include your recommendation as the first option (mark it as recommended)
 - Skip questions the user has already answered
 - Continue until there are no more meaningful questions or the user says they're done
 
@@ -48,7 +52,7 @@ Conduct a thorough interview to surface requirements, constraints, and context t
 
 **What makes a bad question:**
 
-- You could answer it yourself by reading `package.json`, the codebase, or the project's AGENTS.md
+- You could answer it yourself by reading `package.json`, the codebase, or the project's AGENTS/CLAUDE.md
 - It asks for information the user already provided
 - It's generic enough to apply to any project ("What framework are you using?")
 
@@ -65,6 +69,7 @@ Don't ask — inform.
 - Security and privacy considerations
 - Tradeoffs between approaches (with your recommendation)
 - Migration and backwards-compatibility concerns
+- Whether the plan will be executed via an autonomous loop (determines output format)
 
 Read `references/discovery-interview.md` for detailed question categories and examples of strong vs weak questions.
 
@@ -221,6 +226,22 @@ For complex features, include test descriptions in the Validation section: what 
 - **Open Questions**: Anything discovered during implementation that needs revisiting
 
 Keep the plan file updated as implementation proceeds — it becomes the source of truth.
+
+#### Phase 4b: Loop-Ready Output (Optional)
+
+If the user confirmed the plan will be executed via a loop (ask if the project/features are large enough and the player didn't state it directly):
+
+1. Write a second file: `IMPLEMENTATION_PLAN.md` in the project root
+2. Convert each change in the plan to a flat task:
+   - `- [ ] [Description] — [file path] — [brief approach]`
+3. Preserve phase ordering if the plan uses phased grouping
+4. Each task must be completable in one loop iteration — split large changes if needed
+5. Add a Goal section from the plan
+6. Add empty Decision Log and Issues Found sections
+7. Add a reference to the full plan: "See `docs/plans/<feature>.md` for full context"
+
+The rich plan stays as documentation.
+The `IMPLEMENTATION_PLAN.md` is the executable task list for the loop.
 
 #### Persist the Plan
 

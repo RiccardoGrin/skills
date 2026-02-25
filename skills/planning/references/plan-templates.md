@@ -158,6 +158,37 @@ Add threaded comments to documents so collaborators can discuss specific text se
 
 **Why this works**: Phases group by system layer (data, editor, UI) with clear checkpoints. Each phase builds on the previous one. The dependency chain is explicit — you can't build the popover UI before the API and decoration plugin exist. Research directly influenced two decisions (inline popover over sidebar, decorations over marks).
 
+## Loop-Compatible Output Example
+
+When a plan is destined for autonomous loop execution, Phase 4b produces a flat `IMPLEMENTATION_PLAN.md` alongside the rich plan.
+Given the phased plan above (comment threads), the loop-ready output would be:
+
+```
+# Implementation Plan
+
+## Goal
+Add threaded comments to documents so collaborators can discuss specific text selections inline.
+
+See `docs/plans/comment-threads.md` for full context.
+
+## Tasks
+- [ ] Add Comment model to database — `prisma/schema.prisma` — new model with anchor positions, threading via parentId
+- [ ] Add comment CRUD API endpoints — `src/api/comments.ts` — REST endpoints matching existing API patterns
+- [ ] Add comment decoration plugin — `src/editor/plugins/comments.ts` — ProseMirror decorations for highlight + anchor mapping
+- [ ] Add comment trigger to selection toolbar — `src/editor/components/SelectionToolbar.tsx` — "Comment" button on text selection
+- [ ] Add comment composer and thread view — `src/editor/components/CommentThread.tsx` — inline popover with reply + resolve
+- [ ] Add comment indicators in gutter — `src/editor/components/Gutter.tsx` — count badges linking to threads
+
+## Decision Log
+<!-- Populated by Claude during implementation -->
+
+## Issues Found
+<!-- Populated by Claude during implementation -->
+```
+
+**Key properties**: Each task is one line, starts with `- [ ]`, includes the file path, and is completable in a single loop iteration.
+The loop reads `[ ]` markers to find the next task and marks them `[x]` on completion.
+
 ## What Makes These Work
 
 Both examples follow the same principles:
