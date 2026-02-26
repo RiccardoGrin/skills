@@ -229,7 +229,7 @@ Keep the plan file updated as implementation proceeds — it becomes the source 
 
 #### Phase 4b: Loop-Ready Output (Optional)
 
-If the user confirmed the plan will be executed via a loop (ask if the project/features are large enough and the player didn't state it directly):
+If the user confirmed the plan will be executed via a loop (always ask about loop execution in Phase 1 — phrase it as an option: "Will you implement this via an autonomous loop?"):
 
 1. Write a second file: `IMPLEMENTATION_PLAN.md` in the project root
 2. Convert each change in the plan to a flat task:
@@ -239,6 +239,7 @@ If the user confirmed the plan will be executed via a loop (ask if the project/f
 5. Add a Goal section from the plan
 6. Add empty Decision Log and Issues Found sections
 7. Add a reference to the full plan: "See `docs/plans/<feature>.md` for full context"
+8. Note: the loop script detects completion by checking for `ALL_TASKS_COMPLETE` at the start of the file. Include a comment at the top of the generated plan: `<!-- When all tasks are done, the loop agent prepends ALL_TASKS_COMPLETE above this line -->`
 
 The rich plan stays as documentation.
 The `IMPLEMENTATION_PLAN.md` is the executable task list for the loop.
@@ -280,7 +281,7 @@ Before delivering the plan, verify:
 - [ ] Someone could implement this without asking further questions
 - [ ] Plan is self-contained — all context needed for implementation is in the plan, not just in conversation history
 - [ ] Plan respects project conventions (from CLAUDE.md, AGENTS.md, or equivalent project config)
-- [ ] File paths reference real files in the codebase
+- [ ] File paths reference existing files or are plausible and consistent with the codebase structure
 - [ ] Steps are ordered with clear dependency chains
 - [ ] Acceptance criteria are specific and testable
 - [ ] Every decision includes reasoning (the "why")

@@ -164,6 +164,7 @@ When a plan is destined for autonomous loop execution, Phase 4b produces a flat 
 Given the phased plan above (comment threads), the loop-ready output would be:
 
 ```
+<!-- When all tasks are done, the loop agent prepends ALL_TASKS_COMPLETE above this line -->
 # Implementation Plan
 
 ## Goal
@@ -188,6 +189,35 @@ See `docs/plans/comment-threads.md` for full context.
 
 **Key properties**: Each task is one line, starts with `- [ ]`, includes the file path, and is completable in a single loop iteration.
 The loop reads `[ ]` markers to find the next task and marks them `[x]` on completion.
+The loop script detects completion by checking for `ALL_TASKS_COMPLETE` prepended at the top of the file.
+
+## Loop-Compatible Output Example (from Flat List)
+
+Given the flat list example above (keyboard shortcuts), the loop-ready output would be:
+
+```
+<!-- When all tasks are done, the loop agent prepends ALL_TASKS_COMPLETE above this line -->
+# Implementation Plan
+
+## Goal
+Add keyboard shortcuts for common task actions so power users can manage tasks without touching the mouse.
+
+See `docs/plans/keyboard-shortcuts.md` for full context.
+
+## Tasks
+- [ ] Add keyboard event listener to task list — `src/components/TaskList.tsx` — useEffect with keydown listener on container, active only when no text input focused
+- [ ] Add visual selection state to task items — `src/components/TaskItem.tsx` — selected prop with ring-2 outline and aria-selected
+- [ ] Add keyboard shortcut toggle to settings — `src/components/Settings.tsx` — toggle stored in localStorage, checked by listener
+- [ ] Add shortcut help overlay — `src/components/ShortcutHelp.tsx` — modal triggered by ? key showing shortcut table
+
+## Decision Log
+<!-- Populated by Claude during implementation -->
+
+## Issues Found
+<!-- Populated by Claude during implementation -->
+```
+
+**Note**: Even simple flat-list plans get the same loop-compatible format — one `- [ ]` per task, file path included, completable in one iteration.
 
 ## What Makes These Work
 

@@ -45,11 +45,11 @@ Scan the project to understand the landscape.
 This informs the interview — skip questions you can answer from config files.
 
 **Detect:**
-- Package manager (lock files, `packageManager` field, `pyproject.toml`, `Cargo.toml`, `go.mod`)
+- Package manager and ecosystem (lock files, `packageManager` field, `package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod`, workspace configs like `pnpm-workspace.yaml`, `nx.json`, etc.)
 - Framework (dependencies in `package.json`, `pyproject.toml`, config files like `next.config.*`)
 - Test runner (jest/vitest/pytest config, `scripts.test`, `tests/` directory)
 - Linter/formatter (eslint, prettier, biome, ruff, black configs)
-- Existing CLAUDE.md or AGENTS.md — if found, warn and ask whether to merge or replace
+- Existing CLAUDE.md or AGENTS.md — if found, warn and ask whether to merge or replace. Merge = read existing content, preserve user-written sections, add new sections from the template that don't exist yet. Present the merged result for user approval before writing
 - README.md — extract project description
 
 Present findings in a concise summary.
@@ -119,7 +119,7 @@ Create `.claude/settings.json` with auto-format hooks based on the detected form
 Wrap in a PostToolUse hook matching `Write|Edit`.
 See `references/hooks-recipes.md` for the full JSON structure and more patterns.
 
-If no formatter is detected, suggest one appropriate for the stack but do not force it.
+If no formatter is detected, suggest one appropriate for the stack but do not force it. Defaults: Prettier for JS/TS, Ruff for Python, gofmt for Go, rustfmt for Rust.
 
 ### Phase 5: Verification
 

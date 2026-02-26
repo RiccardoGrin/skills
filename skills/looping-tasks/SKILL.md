@@ -41,7 +41,10 @@ i=0
 while [ $i -lt $MAX ]; do
   echo "=== Iteration $((i + 1))/$MAX ==="
 
-  cat <<'PROMPT' | claude -p --model opus --dangerouslySkipPermissions
+  cat <<'PROMPT' | claude -p --model opus --dangerouslySkipPermissions || {
+    echo "Claude exited with error — stopping loop"
+    exit 1
+  }
 Study IMPLEMENTATION_PLAN.md and CLAUDE.md (if it exists).
 
 PICKUP: Before doing anything, orient yourself:
@@ -65,7 +68,7 @@ PLAN MAINTENANCE: After implementation, update the plan:
 - If a future task needs splitting or revision, update it
 - Add key decisions to the Decision Log (business/project decisions, not obvious code choices)
 - Add issues found to Issues Found if relevant
-- If all tasks are done, write ALL_TASKS_COMPLETE as the first line of the plan
+- If all tasks are done, prepend ALL_TASKS_COMPLETE as a new line above all existing content in the plan
 
 HANDOFF: Commit all changes with a descriptive message (WHY not WHAT).
 If there is context the next iteration needs, write it to .claude/handoff.md.
@@ -73,18 +76,22 @@ If there is context the next iteration needs, write it to .claude/handoff.md.
 Stop after this one task.
 PROMPT
 
-  # Check completion
-  if head -1 "$PLAN" 2>/dev/null | grep -q "ALL_TASKS_COMPLETE"; then
-    echo "=== All tasks complete ==="
+  # Check completion (grep anywhere — sentinel may not be exactly line 1)
+  if grep -q "^ALL_TASKS_COMPLETE" "$PLAN" 2>/dev/null; then
+    echo "=== All tasks complete after $((i + 1)) iterations ==="
     break
   fi
 
-  git push origin "$BRANCH" 2>/dev/null || git push -u origin "$BRANCH" 2>/dev/null || true
+  git push origin "$BRANCH" 2>/dev/null || git push -u origin "$BRANCH" 2>/dev/null || echo "Warning: git push failed — changes are committed locally but not backed up"
   i=$((i + 1))
-  sleep 2
+  sleep 2  # Prevents API rate limiting; increase if hitting limits, decrease for faster iteration
 done
 
-echo "=== Finished after $i iterations ==="
+if grep -q "^ALL_TASKS_COMPLETE" "$PLAN" 2>/dev/null; then
+  echo "=== All tasks complete after $i iterations ==="
+else
+  echo "=== Reached max iterations ($MAX) — open tasks may remain ==="
+fi
 ```
 
 #### Design Choices
@@ -97,32 +104,16 @@ echo "=== Finished after $i iterations ==="
 - "Stop after this one task" — critical for loop discipline; without it agents try to do everything.
 - `git push` after each iteration — progress is never lost even if the loop is interrupted.
 - `sleep 2` — prevents API rate limiting between iterations.
-- `ALL_TASKS_COMPLETE` sentinel — simple, grep-able completion signal.
+- `ALL_TASKS_COMPLETE` sentinel — simple, grep-able completion signal. Prepended above all content so it's detectable regardless of plan format.
 
-### Phase 3: Generate `IMPLEMENTATION_PLAN.md` Template
+### Phase 3: Verify `IMPLEMENTATION_PLAN.md`
 
-If the user does not have a plan, generate this template:
+The plan should already exist — the user creates it before running the loop (via the planning skill or manually).
 
-```markdown
-# Implementation Plan
-
-## Goal
-[One sentence: what we're building and why]
-
-## Tasks
-- [ ] Task description — `path/to/file` — brief approach notes
-- [ ] Task description — `path/to/file`
-- [ ] Task description
-
-## Decision Log
-<!-- Populated by Claude during implementation -->
-
-## Issues Found
-<!-- Populated by Claude during implementation -->
-```
-
-If the user has an existing rich plan (from the planning skill), offer to convert it to this checkbox format.
-Each task should be completable in a single iteration — split large tasks.
+1. Check for `IMPLEMENTATION_PLAN.md` in the project root.
+2. If it exists, verify it has at least one `[ ]` task and the format is loop-compatible (flat checkbox list).
+3. If it exists but uses a rich format (prose, phased sections without checkboxes), offer to convert it to the flat checkbox format.
+4. If it does not exist, stop and tell the user to create one first — suggest using the planning skill with the loop-ready output option (Phase 4b).
 
 ### Phase 4: Customize for Project
 
