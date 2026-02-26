@@ -14,7 +14,6 @@ The file should capture what they cannot infer: project identity, business conte
 | File | Read When |
 |------|-----------|
 | `references/claude-md-patterns.md` | Constructing the CLAUDE.md or reviewing examples of effective minimal configs |
-| `references/hooks-recipes.md` | Setting up hooks in `.claude/settings.json` or reviewing hook patterns |
 
 ## Philosophy
 
@@ -117,9 +116,11 @@ Create `.claude/settings.json` with auto-format hooks based on the detected form
 **If Black:** `black $CLAUDE_FILE_PATH 2>/dev/null || true`
 
 Wrap in a PostToolUse hook matching `Write|Edit`.
-See `references/hooks-recipes.md` for the full JSON structure and more patterns.
 
 If no formatter is detected, suggest one appropriate for the stack but do not force it. Defaults: Prettier for JS/TS, Ruff for Python, gofmt for Go, rustfmt for Rust.
+
+`.claude/settings.json` should be committed to git so project hooks are shared with the team.
+If `.claude/settings.local.json` exists (machine-specific overrides), ensure it's in `.gitignore`.
 
 ### Phase 5: Verification
 

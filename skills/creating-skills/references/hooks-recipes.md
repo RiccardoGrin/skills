@@ -1,13 +1,13 @@
 ---
-summary: Hook recipes for .claude/settings.json
+summary: Hook recipes and reference for .claude/settings.json
 read_when:
-  - Setting up hooks in .claude/settings.json
+  - Setting up hooks in skills or understanding hook patterns
   - Reviewing hook patterns for Claude Code
 ---
 
 # Hooks Recipes
 
-Hooks live in `.claude/settings.json` under a `hooks` key. The full structure:
+Hooks live under a `hooks` key in settings files or skill frontmatter. The full structure:
 
 ```json
 {
@@ -27,9 +27,24 @@ Hooks live in `.claude/settings.json` under a `hooks` key. The full structure:
 
 Each recipe below shows the hook object that goes inside the appropriate array. The `matcher` field filters by tool name (regex). An empty `matcher` matches all tools.
 
+## Hook Locations
+
+Hooks can be defined in multiple locations. All matching hooks from all locations run in parallel and are deduplicated.
+
+| Location | Scope | Committable? |
+|----------|-------|-------------|
+| `~/.claude/settings.json` | All projects (global) | No, machine-local |
+| `.claude/settings.json` | Single project | Yes, commit to git |
+| `.claude/settings.local.json` | Single project | No, gitignored |
+| Skill/agent frontmatter | While skill is active | Yes, in the skill file |
+
 ## Hook Environment Variables
 
-Claude Code sets these environment variables when hooks run:
+Claude Code provides context to hooks in two ways:
+
+**JSON on stdin:** Every hook receives a JSON object on stdin with full context including `tool_name`, `tool_input`, `session_id`, `cwd`, and more. For complex hooks, read this with `jq` or your language's JSON parser.
+
+**Convenience environment variables** for simple one-liners:
 
 | Variable | Description |
 |----------|-------------|
@@ -38,12 +53,18 @@ Claude Code sets these environment variables when hooks run:
 
 Paths are absolute and properly escaped. If your hook command uses these variables, quote them to handle spaces in paths.
 
+**Exit codes:**
+- **Exit 0** = allow (tool proceeds normally)
+- **Exit 2** = block (tool call prevented, stderr shown to Claude as feedback)
+- **Other non-zero** = non-blocking error (logged silently, tool still runs)
+
 ## Table of Contents
 
 - [PostToolUse: Auto-Format](#posttooluse-auto-format)
 - [PreToolUse: Git Safety](#pretooluse-git-safety)
 - [Stop Hook: Self-Review](#stop-hook-self-review)
 - [Common Patterns from the Community](#common-patterns-from-the-community)
+- [Other Hook Events](#other-hook-events)
 
 ## PostToolUse: Auto-Format
 
@@ -122,14 +143,14 @@ These hooks inspect the Bash command and block destructive patterns.
   "hooks": [
     {
       "type": "command",
-      "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE '(push\\s+.*\\s+(--force|-f\\b)|reset\\s+--hard|clean\\s+-f|checkout\\s+--\\s|branch\\s+-D)'; then echo 'BLOCKED: dangerous git operation' >&2; exit 1; fi"
+      "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE '(push\\s+.*\\s+(--force|-f\\b)|reset\\s+--hard|clean\\s+-f|checkout\\s+--\\s|branch\\s+-D)'; then echo 'BLOCKED: dangerous git operation' >&2; exit 2; fi"
     }
   ]
 }
 ```
 
 This catches `git push --force`, `git push -f`, `git reset --hard`, `git clean -f`, `git checkout -- .`, and `git branch -D`.
-The hook writes to stderr and exits non-zero to block execution.
+The hook writes to stderr and exits with code 2 to block execution. Exit 2 is the blocking exit code — exit 1 would only log a warning without preventing the command.
 
 ## Stop Hook: Self-Review
 
@@ -161,19 +182,7 @@ If they take more than a few seconds, Claude's response feels sluggish.
 
 ## Common Patterns from the Community
 
-**Auto-commit on task completion:**
-Some developers hook into Stop to auto-commit changes after each Claude turn.
-This creates a granular git history that makes it easy to revert bad changes.
-Tradeoff: noisy commit history.
-
-```json
-{
-  "matcher": "",
-  "hooks": [
-    { "type": "command", "command": "git add -A && git commit -m 'auto: Claude checkpoint' 2>/dev/null || true" }
-  ]
-}
-```
+**Auto-commit (not recommended):** Some developers use a Stop hook to auto-commit after each Claude turn. This creates rollback points but produces meaningless commit messages and `git add -A` is indiscriminate. For autonomous loops, the loop prompt already commits with descriptive messages — prefer that approach. If you need crash recovery, use branch checkpoints or `git stash` instead.
 
 **Test-on-save:**
 Run the nearest test file after every Write or Edit.
@@ -213,3 +222,27 @@ macOS:
   ]
 }
 ```
+
+## Other Hook Events
+
+The recipes above cover the most common hooks. Claude Code supports 17 hook events total. For the full reference, see https://code.claude.com/docs/en/hooks
+
+| Event | When it fires |
+|-------|--------------|
+| `SessionStart` | Claude Code session begins |
+| `SessionEnd` | Session ends |
+| `UserPromptSubmit` | User submits a prompt (can modify/reject it) |
+| `PreToolUse` | Before a tool call executes |
+| `PostToolUse` | After a tool call completes successfully |
+| `PostToolUseFailure` | After a tool call fails |
+| `PermissionRequest` | When a permission prompt is shown |
+| `Notification` | When Claude sends a notification |
+| `SubagentStart` | When a subagent (Task tool) starts |
+| `SubagentStop` | When a subagent stops |
+| `Stop` | When Claude finishes its turn |
+| `TeammateIdle` | When a teammate agent goes idle |
+| `TaskCompleted` | When a task in the task list is completed |
+| `ConfigChange` | When settings or config change |
+| `WorktreeCreate` | When a git worktree is created |
+| `WorktreeRemove` | When a git worktree is removed |
+| `PreCompact` | Before conversation context is compacted |

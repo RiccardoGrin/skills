@@ -48,7 +48,22 @@ version: 1.0.0
 ---
 ```
 
-**Allowed keys**: `name` (required), `description` (required), `version` (optional), `license` (optional), `compatibility` (optional), `metadata` (optional), `allowed-tools` (optional)
+**Allowed keys**: `name` (required), `description` (required), `version` (optional), `license` (optional), `compatibility` (optional), `metadata` (optional), `allowed-tools` (optional), `hooks` (optional)
+
+The `hooks` key lets a skill define hooks scoped to the skill's lifetime:
+
+```yaml
+---
+name: secure-operations
+description: ...
+hooks:
+  PreToolUse:
+    - matcher: "Bash"
+      hooks:
+        - type: command
+          command: "./scripts/security-check.sh"
+---
+```
 
 **Name rules**:
 - kebab-case only: `[a-z][a-z0-9]*(-[a-z0-9]+)*`

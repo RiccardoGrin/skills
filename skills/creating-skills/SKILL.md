@@ -18,6 +18,7 @@ Follow the workflow below step by step. Use the reference files for detailed gui
 | `references/quality-checklist.md` | Running the pre-ship quality checklist |
 | `references/anti-patterns.md` | Reviewing common mistakes to avoid |
 | `references/evaluation-guide.md` | Creating evaluations to measure skill quality objectively |
+| `references/hooks-recipes.md` | Setting up hooks in skills or understanding hook patterns |
 
 ## Core Principles
 
