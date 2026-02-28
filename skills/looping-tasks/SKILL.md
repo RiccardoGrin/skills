@@ -34,17 +34,15 @@ set -euo pipefail
 MAX="${1:-10}"
 PLAN="IMPLEMENTATION_PLAN.md"
 BRANCH=$(git branch --show-current)
+PROMPT_FILE=".claude/loop-prompt.txt"
 i=0
 
 [ ! -f "$PLAN" ] && echo "Missing $PLAN — create a plan first (use the planning skill or write one manually)" && exit 1
 
-while [ $i -lt $MAX ]; do
-  echo "=== Iteration $((i + 1))/$MAX ==="
+mkdir -p .claude
 
-  cat <<'PROMPT' | claude -p --model opus --dangerouslySkipPermissions || {
-    echo "Claude exited with error — stopping loop"
-    exit 1
-  }
+# Write prompt to file — avoids heredoc-pipe-OR parsing issues on Windows/Git Bash
+cat > "$PROMPT_FILE" <<'PROMPT'
 Study IMPLEMENTATION_PLAN.md and CLAUDE.md (if it exists).
 
 PICKUP: Before doing anything, orient yourself:
@@ -76,6 +74,14 @@ If there is context the next iteration needs, write it to .claude/handoff.md.
 Stop after this one task.
 PROMPT
 
+while [ $i -lt $MAX ]; do
+  echo "=== Iteration $((i + 1))/$MAX ==="
+
+  if ! claude -p --model opus --dangerously-skip-permissions < "$PROMPT_FILE"; then
+    echo "Claude exited with error — stopping loop"
+    exit 1
+  fi
+
   # Check completion (grep anywhere — sentinel may not be exactly line 1)
   if grep -q "^ALL_TASKS_COMPLETE" "$PLAN" 2>/dev/null; then
     echo "=== All tasks complete after $((i + 1)) iterations ==="
@@ -96,9 +102,9 @@ fi
 
 #### Design Choices
 
-- `--dangerouslySkipPermissions` — the agent needs full tool access including code execution; this is the default for autonomous loops.
+- `--dangerously-skip-permissions` — the agent needs full tool access including code execution; this is the default for autonomous loops.
 - `--model opus` — strongest model for autonomous work; change to sonnet for simpler tasks.
-- Heredoc prompt (`cat <<'PROMPT'`) — easier to read and edit than a one-liner.
+- Prompt written to temp file, then fed via `< "$PROMPT_FILE"` — the previous `cat <<'PROMPT' | claude ... || { ... }` pattern caused syntax errors on Windows/Git Bash because the heredoc-pipe-OR-brace combination doesn't parse reliably across shells. Writing to a file first is portable and equally readable.
 - "Don't assume features are not implemented" — prevents recreating existing code.
 - "Only 1 subagent for builds and tests" — prevents resource contention.
 - "Stop after this one task" — critical for loop discipline; without it agents try to do everything.
@@ -120,16 +126,18 @@ The plan should already exist — the user creates it before running the loop (v
 Adjust the generated `loop.sh`:
 
 - Set the model — opus for complex work, sonnet for straightforward tasks.
-- If the user wants restricted tool access, replace `--dangerouslySkipPermissions` with `--allowedTools` and a whitelist tailored to the detected stack (e.g., `"Read,Glob,Grep,Edit,Write,Bash(git *),Bash(pnpm *),Bash(npx *),Task"`).
+- If the user wants restricted tool access, replace `--dangerously-skip-permissions` with `--allowedTools` and a whitelist tailored to the detected stack (e.g., `"Read,Glob,Grep,Edit,Write,Bash(git *),Bash(pnpm *),Bash(npx *),Task"`).
+- **Windows/PowerShell users**: `./loop.sh` won't execute directly in PowerShell — it triggers a "choose program" dialog. Instruct the user to run `bash ./loop.sh` instead (requires Git Bash on PATH, which is standard with Git for Windows). Do NOT generate a `.ps1` equivalent — PowerShell treats `-` as a unary operator and special characters (em dashes, etc.) break string parsing, making the prompt content unreliable.
 
 ### Phase 5: Verification
 
 1. Read back `loop.sh` and confirm it is correct.
 2. Verify `IMPLEMENTATION_PLAN.md` exists and has at least one `[ ]` task.
-3. Show the user how to run it:
+3. **Do NOT attempt to run `loop.sh` from within Claude Code** — nested Claude sessions are forbidden and will error. The script must be run from a separate terminal.
+4. Show the user how to run it:
    - `./loop.sh 10` — implement up to 10 tasks
    - `./loop.sh 1` — implement just one task (for testing)
-4. Recommend: run `./loop.sh 1` first, review the result, then scale up.
+5. Recommend: run `./loop.sh 1` first, review the result, then scale up.
 
 ## Anti-Patterns
 
