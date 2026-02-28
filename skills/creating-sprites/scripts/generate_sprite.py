@@ -28,6 +28,23 @@ except ImportError:
     sys.exit(1)
 
 
+def load_dotenv() -> None:
+    """Load .env file from current directory into os.environ if it exists."""
+    env_path = Path(".env")
+    if not env_path.exists():
+        return
+    for line in env_path.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if "=" in line:
+            key, _, value = line.partition("=")
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            if key and key not in os.environ:
+                os.environ[key] = value
+
+
 def load_reference_image(path: str) -> Image.Image:
     """Load an image file as a PIL Image for the Gemini SDK."""
     return Image.open(path)
@@ -44,9 +61,16 @@ def generate_candidates(
     image_size: str = "1K",
 ) -> int:
     """Generate sprite candidates. Returns count of successfully generated images."""
+    if not api_key:
+        load_dotenv()
     key = api_key or os.environ.get("GEMINI_API_KEY")
     if not key:
-        print("ERROR: No API key. Set GEMINI_API_KEY env var or pass --api-key.")
+        print("ERROR: No API key found. Checked: --api-key flag, GEMINI_API_KEY env var, .env file in current directory.")
+        print("Get a free key at: https://aistudio.google.com/apikey")
+        print("Then either:")
+        print("  1. Create a .env file with: GEMINI_API_KEY=your-key-here")
+        print("  2. Export it: export GEMINI_API_KEY=your-key-here")
+        print("  3. Pass it: --api-key your-key-here")
         sys.exit(1)
 
     client = genai.Client(api_key=key)

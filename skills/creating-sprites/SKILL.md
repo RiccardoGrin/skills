@@ -17,10 +17,13 @@ Generate pixel-art game sprites via Gemini's native image generation API, then p
 
 ## Prerequisites
 
-- **`GEMINI_API_KEY`** environment variable — a Google AI Studio API key
-  - Get one free at: https://aistudio.google.com/apikey
-  - Set it: `export GEMINI_API_KEY="your-key-here"` (or add to your shell profile / project `.env`)
-- **Python dependencies**: `pip install -r scripts/requirements.txt` (installs `google-genai` and `Pillow`)
+- **`GEMINI_API_KEY`** — a Google AI Studio API key (free at https://aistudio.google.com/apikey)
+  - The generate script auto-loads from: `--api-key` flag → `GEMINI_API_KEY` env var → `.env` file in current directory
+- **Python dependencies**: `google-genai` and `Pillow` (installed via `requirements.txt` in the skill's `scripts/` directory)
+
+## Script Paths
+
+All `scripts/` paths in this skill are **relative to the skill directory**, not the project directory. Resolve them to absolute paths before running. For example, if the skill is installed at `~/.claude/skills/creating-sprites/`, then `scripts/generate_sprite.py` means `~/.claude/skills/creating-sprites/scripts/generate_sprite.py`.
 
 ## Workflow Checklist
 
@@ -37,22 +40,37 @@ Generate pixel-art game sprites via Gemini's native image generation API, then p
 
 ## Phase 0: Verify Prerequisites
 
-Before doing any work, verify the environment is ready. Run these checks and resolve any issues before proceeding.
+Before doing any work, verify the environment is ready. Handle what you can; only ask the user for things you can't resolve yourself.
 
-1. **Check API key**:
+1. **Check API key** — check all three sources:
    ```bash
-   python -c "import os; key = os.environ.get('GEMINI_API_KEY', ''); print('OK' if key else 'MISSING')"
+   python -c "
+   import os
+   from pathlib import Path
+   key = os.environ.get('GEMINI_API_KEY', '')
+   if not key:
+       env = Path('.env')
+       if env.exists():
+           for line in env.read_text().splitlines():
+               if line.strip().startswith('GEMINI_API_KEY'):
+                   key = line.partition('=')[2].strip().strip('\"').strip(\"'\")
+   print('OK' if key else 'MISSING')
+   "
    ```
-   - If `MISSING`: tell the user to set the `GEMINI_API_KEY` environment variable with a key from https://aistudio.google.com/apikey
-   - Do NOT proceed to Phase 4 without a valid key
+   - If `MISSING`: ask the user to get a key from https://aistudio.google.com/apikey and either add `GEMINI_API_KEY=their-key` to a `.env` file in the project root, or export it as an environment variable
+   - Do NOT proceed past this phase without a valid key
 
-2. **Check Python dependencies**:
+2. **Install Python dependencies** (do this yourself, don't ask the user):
+   ```bash
+   pip install -r <skill-dir>/scripts/requirements.txt
+   ```
+   Then verify:
    ```bash
    python -c "from google import genai; from PIL import Image; print('OK')"
    ```
-   - If this fails: tell the user to run `pip install -r scripts/requirements.txt`
+   - If install fails due to permissions, try `pip install --user -r ...`
 
-If either check fails, stop and help the user resolve the issue before continuing.
+Only the API key requires user action. Everything else you should handle yourself.
 
 ## Phase 1: Determine Sprite Requirements
 
@@ -204,5 +222,5 @@ Read the final sprite to verify: correct dimensions, clean transparency, pixel-a
 
 ## Dependency Note
 
-This skill requires `google-genai` and `Pillow` — install via `pip install -r scripts/requirements.txt`.
+This skill requires `google-genai` and `Pillow`. Phase 0 handles installation automatically.
 This is an approved exception to the standard-library-only rule for scripts.
