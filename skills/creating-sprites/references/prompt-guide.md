@@ -22,13 +22,18 @@ Single sprite only, centered in frame, no border, no shadow, no text, no grid.
 
 ## Style Keywords
 
-Choose keywords that match the project's art direction:
+Study the project's existing sprites before choosing style keywords. Look at outlines, shading depth, perspective, and proportions — then pick keywords that match.
 
-- **Era/palette**: "16-bit pixel art", "SNES-era", "GBA-style", "NES palette", "limited palette"
-- **Clarity**: "clean edges", "sharp pixels", "no anti-aliasing", "crisp outlines"
-- **Perspective**: "top-down view", "side view", "3/4 view", "isometric"
-- **Genre**: "game sprite", "RPG sprite", "platformer sprite"
-- **Inspiration**: "[game name] inspired", "in the style of [game]"
+**Common keyword categories:**
+
+- **Era/genre**: "indie RPG style", "16-bit style", "retro", "modern pixel art"
+- **Outlines**: "bold dark outlines", "thin outlines", "no outlines", "crisp outlines"
+- **Shading**: "rich shading", "detailed color gradients", "flat shading", "cel-shaded", "limited palette"
+- **Perspective**: "3/4 top-down view", "side view", "top-down view", "isometric"
+- **Shape**: "slightly chunky proportions", "rounded forms", "angular", "slim"
+- **Clarity**: "clean edges", "sharp pixels", "no anti-aliasing"
+
+**Important:** Always derive style keywords from the existing sprites in the project. Don't default to generic terms like "16-bit RPG" or "limited palette" — many indie games use rich multi-tone shading that those keywords would suppress.
 
 ## Anchoring Instructions
 
@@ -63,27 +68,29 @@ solid flat [COLOR] background, no gradients, no patterns, no shadows on backgrou
 
 ## Per-Type Prompt Examples
 
+These are examples — adapt the style keywords to match the project's existing art. The structure (dimensions, anchoring, background, constraints, reference line) stays the same; swap in whatever style fits.
+
 **Item (sword):**
 ```
-A 32x32 pixel art iron sword, 16-bit RPG style, clean edges, limited palette.
+A 32x32 pixel art iron sword, [STYLE KEYWORDS].
 Centered in the image.
 Transparent background.
 Single sprite only, centered in frame, no border, no shadow, no text, no grid.
 Match the style of the provided reference images.
 ```
 
-**Enemy (slime):**
+**Enemy:**
 ```
-A 32x32 pixel art green slime monster, SNES-era RPG style, cute but menacing, clean outlines.
+A 32x32 pixel art fiery crawler monster, [STYLE KEYWORDS], menacing.
 Touching the bottom of the image.
 Transparent background.
 Single sprite only, centered in frame, no border, no shadow, no text, no grid.
 Match the style of the provided reference images.
 ```
 
-**Decoration (oak tree):**
+**Decoration (tree):**
 ```
-A 48x64 pixel art oak tree, top-down RPG style, lush green canopy, brown trunk, limited palette.
+A 48x64 pixel art tree, [STYLE KEYWORDS], lush green canopy with detailed shading, brown trunk with highlights.
 Touching the bottom of the image.
 Transparent background.
 Single sprite only, centered in frame, no border, no shadow, no text, no grid.
@@ -92,24 +99,25 @@ Match the style of the provided reference images.
 
 **Player character:**
 ```
-A 32x32 pixel art adventurer character, SNES RPG style, facing south, idle pose, clean edges.
+A 32x32 pixel art adventurer character, [STYLE KEYWORDS], facing south, idle pose.
 Touching the bottom of the image.
 Transparent background.
 Single sprite only, centered in frame, no border, no shadow, no text, no grid.
 Match the style of the provided reference images.
 ```
 
-**Structure (chest):**
+**Structure (workbench):**
 ```
-A 32x32 pixel art wooden treasure chest, 16-bit style, closed lid, metal bindings, limited palette.
+A 32x32 pixel art wooden workbench, [STYLE KEYWORDS], detailed wood grain shading, tools on surface.
 Touching the bottom of the image.
 Transparent background.
 Single sprite only, centered in frame, no border, no shadow, no text, no grid.
+Match the style of the provided reference images.
 ```
 
 **Boss enemy:**
 ```
-A 96x64 pixel art dragon boss, SNES RPG style, imposing, wings spread, detailed scales, limited palette.
+A 96x64 pixel art dragon boss, [STYLE KEYWORDS], imposing, wings spread, detailed scales.
 Touching the bottom of the image.
 Transparent background.
 Single sprite only, centered in frame, no border, no shadow, no text, no grid.
@@ -118,7 +126,25 @@ Match the style of the provided reference images.
 
 **Animal (cow):**
 ```
-A 48x32 pixel art cow, wider than tall, top-down farm game style, white and brown patches, simple and cute.
+A 48x32 pixel art cow, [STYLE KEYWORDS], white and brown patches with detailed shading.
+Touching the bottom of the image.
+Transparent background.
+Single sprite only, centered in frame, no border, no shadow, no text, no grid.
+Match the style of the provided reference images.
+```
+
+**Fish (trout):**
+```
+A 32x32 pixel art trout, [STYLE KEYWORDS], side view, rich color gradients along body, detailed fins.
+Centered in the image.
+Transparent background.
+Single sprite only, centered in frame, no border, no shadow, no text, no grid.
+Match the style of the provided reference images.
+```
+
+**Pet (flame fox):**
+```
+A 32x32 pixel art flame fox companion, [STYLE KEYWORDS], warm orange and yellow tones with fiery highlights, cute proportions.
 Touching the bottom of the image.
 Transparent background.
 Single sprite only, centered in frame, no border, no shadow, no text, no grid.
@@ -129,7 +155,7 @@ Match the style of the provided reference images.
 
 | Problem | Prompt Fix |
 |---------|------------|
-| Too many colors | Add "limited palette", "8-color palette", or "16-color palette" |
+| Too many colors / noisy | Add "cohesive color palette", "controlled shading", or "limited palette" — but check existing sprites first, many projects use rich multi-tone shading |
 | Blurry/soft edges | Add "sharp edges", "no anti-aliasing", "crisp pixel boundaries" |
 | Multiple sprites | Emphasize "SINGLE sprite", "ONE object only", "nothing else in frame" |
 | Copies reference too closely | "Generate something different but in the same style" |
