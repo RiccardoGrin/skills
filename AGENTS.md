@@ -26,7 +26,7 @@ skills/                          ← repo root
 - **Skill names**: kebab-case, prefer gerund form (`creating-skills`, `analyzing-data`, not `skill-creator`, `data-analyzer`)
 - **File names**: kebab-case for markdown, snake_case for Python scripts
 - **Markdown**: ATX headings (`#`), one sentence per line in body text, fenced code blocks with language tag
-- **Python**: Standard library only — no external dependencies. Compatible with Python 3.8+.
+- **Python**: Standard library only by default — no external dependencies. Compatible with Python 3.8+. Individual skills may declare dependency exceptions in their SKILL.md (with a `requirements.txt` in `scripts/`).
 - **Paths**: Always use forward slashes, even in examples. Never use backslash paths.
 
 ## Skill Authoring Rules
@@ -70,7 +70,7 @@ skills/                          ← repo root
 - Reference files must be linked from the SKILL.md body or they won't be discovered
 - The `npx skills` CLI reads from `skills/` directories specifically
 - No package.json needed — this is a pure content repository
-- Python scripts must use only the standard library (no pip installs)
+- Python scripts use standard library by default; skills with external deps must declare the exception in SKILL.md and provide `scripts/requirements.txt`
 
 ## Commit & PR Guidelines
 

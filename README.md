@@ -17,6 +17,7 @@ npx skills add RiccardoGrin/skills
 | `planning` | Beta | Creates implementation-ready plans through discovery interviews, external research, and codebase analysis |
 | `initializing-projects` | Beta | Generates a tailored, self-maintaining CLAUDE.md for new projects through auto-detection and interviews |
 | `looping-tasks` | Beta | Generates autonomous loop infrastructure for executing implementation plans across multiple Claude sessions |
+| `creating-sprites` | Beta | Guides pixel-art sprite creation via Gemini image generation with automated processing |
 
 > **Maturity** indicates development status: *Draft* (in progress), *Beta* (usable, feedback welcome), *Stable* (production-ready).
 
