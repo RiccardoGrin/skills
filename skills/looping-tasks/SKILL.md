@@ -56,9 +56,17 @@ You are not required to go in order — use your judgment.
 
 IMPLEMENT: Do that one task thoroughly:
 - Study existing code before modifying — don't assume features are not implemented
+- Read CLAUDE.md (or equivalent project config) before creating content — follow any asset, design, or quality rules documented there
 - Write code, write tests, run tests until they pass
 - Run the linter/formatter if one is configured
 - Use only 1 subagent for builds and tests to avoid resource contention
+
+VERIFY: Before marking a task done, check your work:
+- If you created assets (images, icons, etc.), verify they meet project quality standards (e.g., correct dimensions, true transparency, no placeholders left behind)
+- Verify new content is logically consistent with the rest of the project (e.g., labels make sense, data relationships are valid, config entries match code that references them)
+- If you added UI elements, verify layering/z-index doesn't obscure existing UI
+- Cross-reference any data/config files against the code that loads them — list gaps as new tasks
+- Run the build/test command and confirm zero errors
 
 PLAN MAINTENANCE: After implementation, update the plan:
 - Mark the completed task [x]

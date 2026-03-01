@@ -219,6 +219,21 @@ See `docs/plans/keyboard-shortcuts.md` for full context.
 
 **Note**: Even simple flat-list plans get the same loop-compatible format — one `- [ ]` per task, file path included, completable in one iteration.
 
+## Verification Notes in Plans
+
+When plans will be executed autonomously (via a loop), include a `## Notes` section at the end with verification guidance. This tells the loop agent what to check beyond "does it build?"
+
+```
+## Notes
+
+- Asset tasks: verify quality (correct dimensions, transparency, format), placeholder code removed, keys/paths match config files
+- Logic/data tasks: verify logical consistency (labels, relationships, references all valid), events/hooks cleaned up
+- UI tasks: verify z-index/layering doesn't obscure existing UI, effects are noticeable, cleanup on unmount/teardown
+- Tasks producing placeholders: mark `✅ Done (placeholder)` with a follow-up task created immediately
+```
+
+These notes are consumed by the loop agent's VERIFY phase — they bridge the gap between "it compiles" and "it's actually correct."
+
 ## What Makes These Work
 
 Both examples follow the same principles:

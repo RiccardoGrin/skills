@@ -244,6 +244,14 @@ If the user confirmed the plan will be executed via a loop (always ask about loo
 The rich plan stays as documentation.
 The `IMPLEMENTATION_PLAN.md` is the executable task list for the loop.
 
+**Verification guidance in plans**: When constructing tasks, include type-appropriate verification hints so the loop agent knows what to check beyond "does it build?" Common patterns:
+
+- **Asset tasks** (images, icons, sprites): Verify quality standards (correct dimensions, transparency, format), remove placeholder/generated code, confirm keys/paths match config/data files
+- **Logic/data tasks**: Verify content is logically consistent (e.g., labels make sense, relationships are valid, new entries have all required references), events/hooks are emitted and cleaned up
+- **UI tasks**: Verify layering/z-index doesn't obscure existing UI, visual effects are noticeable (not too subtle), cleanup on unmount/teardown
+
+Tasks that produce temporary placeholders should be marked `Done (placeholder)` with a follow-up task created immediately.
+
 #### Persist the Plan
 
 Write the completed plan to a markdown file so it survives beyond this session.
