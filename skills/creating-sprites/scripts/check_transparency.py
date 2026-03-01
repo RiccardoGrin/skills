@@ -45,9 +45,9 @@ def check_checkerboard(img: Image.Image, sample_step: int = 8) -> bool:
     if total == 0:
         return False
 
-    # If >80% of sampled pixels match a checkerboard pattern, flag it
+    # If >40% of sampled pixels match a checkerboard pattern, flag it
     match_rate = (total - mismatches) / total
-    return match_rate > 0.80
+    return match_rate > 0.40
 
 
 def check_transparency(input_path: str, threshold: float = 10.0) -> bool:

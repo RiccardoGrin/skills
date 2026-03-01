@@ -59,6 +59,7 @@ def generate_candidates(
     api_key: str | None = None,
     aspect_ratio: str = "1:1",
     image_size: str = "1K",
+    name: str = "candidate",
 ) -> int:
     """Generate sprite candidates. Returns count of successfully generated images."""
     if not api_key:
@@ -121,7 +122,7 @@ def generate_candidates(
                 continue
 
             # Save candidate
-            filename = out / f"candidate_{candidate_num:03d}.png"
+            filename = out / f"{name}_{candidate_num:03d}.png"
             image.save(str(filename))
 
             success += 1
@@ -151,6 +152,9 @@ def main():
     parser.add_argument("--image-size", default="1K",
                         choices=["512px", "1K", "2K", "4K"],
                         help="Generation resolution (default: 1K)")
+    parser.add_argument("--name", default="candidate",
+                        help="Base name for output files (default: candidate). "
+                             "E.g. --name slime produces slime_001.png")
     args = parser.parse_args()
 
     generate_candidates(
@@ -162,6 +166,7 @@ def main():
         api_key=args.api_key,
         aspect_ratio=args.aspect_ratio,
         image_size=args.image_size,
+        name=args.name,
     )
 
 

@@ -123,10 +123,11 @@ python scripts/generate_sprite.py \
   --output-dir ./sprites-wip \
   --reference temp/ref1_upscaled.png \
   --reference temp/ref2_upscaled.png \
-  --count 4
+  --count 4 \
+  --name slime
 ```
 
-Outputs: `candidate_001.png` through `candidate_004.png` in the output directory.
+The `--name` flag sets the base filename. Use a short, descriptive slug for the sprite being created (e.g. `slime`, `health_potion`, `oak_tree`). Outputs: `slime_001.png` through `slime_004.png` in the output directory.
 
 ## Phase 5: Validate Candidates
 
@@ -136,12 +137,12 @@ Two-step validation: programmatic then visual.
 
 Run on each candidate:
 ```bash
-python scripts/check_transparency.py --input ./sprites-wip/candidate_001.png
+python scripts/check_transparency.py --input ./sprites-wip/slime_001.png
 ```
 
 Output format:
 ```
-FILE: candidate_001.png
+FILE: slime_001.png
 FORMAT: PNG
 ALPHA_CHANNEL: yes
 TRANSPARENT_PIXELS: 45.2%
@@ -182,8 +183,8 @@ Run the full pipeline on the selected candidate:
 
 ```bash
 python scripts/process_sprite.py pipeline \
-  --input ./sprites-wip/candidate_002.png \
-  --output ./sprites/my_sprite.png \
+  --input ./sprites-wip/slime_002.png \
+  --output ./sprites/slime.png \
   --target-width 32 --target-height 32 \
   --crop-mode bottom-anchor
 ```
@@ -203,8 +204,9 @@ Read the final sprite to verify: correct dimensions, clean transparency, pixel-a
 ## Phase 7: Save and Update Plan
 
 1. Move the final sprite to the correct project folder
-2. Clean up temporary files (sprites-wip/, temp upscaled references)
-3. Update the implementation plan with integration tasks (add to asset registry, create entity config, etc.)
+2. Clean up temporary upscaled references (temp/)
+3. **Keep all candidates in `sprites-wip/`** — do NOT delete them. The descriptive filenames (from `--name`) make it easy to review rejected candidates later for manual selection
+4. Update the implementation plan with integration tasks (add to asset registry, create entity config, etc.)
 
 ## Anti-Patterns
 
