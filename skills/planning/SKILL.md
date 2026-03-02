@@ -244,6 +244,8 @@ If the user confirmed the plan will be executed via a loop (always ask about loo
 The rich plan stays as documentation.
 The `IMPLEMENTATION_PLAN.md` is the executable task list for the loop.
 
+**Agent capabilities**: Do not assume art or asset tasks are human-only. Agents may have skills for sprite creation, image generation, or other asset work. Plan these as normal tasks — the implementing agent will check its available skills and attempt them. Only mark a task as requiring human input when it genuinely cannot be automated (e.g., subjective creative direction, licensing decisions).
+
 **Verification guidance in plans**: When constructing tasks, include type-appropriate verification hints so the loop agent knows what to check beyond "does it build?" Common patterns:
 
 - **Asset tasks** (images, icons, sprites): Verify quality standards (correct dimensions, transparency, format), remove placeholder/generated code, confirm keys/paths match config/data files

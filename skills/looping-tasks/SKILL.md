@@ -58,6 +58,7 @@ You are not required to go in order — use your judgment.
 IMPLEMENT: Do that one task thoroughly:
 - Study existing code before modifying — don't assume features are not implemented
 - Read CLAUDE.md (or equivalent project config) before creating content — follow any asset, design, or quality rules documented there
+- Check your available skills and tools before deferring work — you may have capabilities for asset creation (sprites, images, icons), content generation, or other tasks that seem "human-only." If a skill exists for it, attempt it rather than leaving a placeholder
 - Write code, write tests, run tests until they pass
 - Run the linter/formatter if one is configured
 - Use only 1 subagent for builds and tests to avoid resource contention
