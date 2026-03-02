@@ -35,6 +35,7 @@ MAX="${1:-10}"
 PLAN="IMPLEMENTATION_PLAN.md"
 BRANCH=$(git branch --show-current)
 PROMPT_FILE=".claude/loop-prompt.txt"
+CHANGELOG_PROMPT=".claude/changelog-prompt.txt"
 i=0
 
 [ ! -f "$PLAN" ] && echo "Missing $PLAN — create a plan first (use the planning skill or write one manually)" && exit 1
@@ -76,11 +77,28 @@ PLAN MAINTENANCE: After implementation, update the plan:
 - Add issues found to Issues Found if relevant
 - If all tasks are done, prepend ALL_TASKS_COMPLETE as a new line above all existing content in the plan
 
+CHANGELOG: Consider whether the completed work so far warrants a changelog update.
+Prefer bundling related work into larger, thematic updates over frequent small ones.
+For example: one new biome with its mobs is a minor addition — but three new biomes with full
+enemy rosters is a cohesive major update worth a version bump. Wait for the bigger story.
+Only run /generating-changelogs when the accumulated [x] items (not yet in CHANGELOG.md) form
+a release that would feel meaningful to a player — not just "stuff got added."
+When in doubt, skip it — the end-of-loop completion will always generate a final changelog.
+
 HANDOFF: Commit all changes with a descriptive message (WHY not WHAT).
 If there is context the next iteration needs, write it to .claude/handoff.md.
 
 Stop after this one task.
 PROMPT
+
+cat > "$CHANGELOG_PROMPT" <<'CHANGELOG'
+Run /generating-changelogs
+
+Generate a changelog for all completed work in IMPLEMENTATION_PLAN.md.
+Only include tasks marked [x] that are NOT already covered by an existing CHANGELOG.md entry.
+If CHANGELOG.md already has entries, this is an incremental update — don't repeat previous content.
+Commit the changelog update.
+CHANGELOG
 
 while [ $i -lt $MAX ]; do
   echo "=== Iteration $((i + 1))/$MAX ==="
@@ -93,6 +111,9 @@ while [ $i -lt $MAX ]; do
   # Check completion (grep anywhere — sentinel may not be exactly line 1)
   if grep -q "^ALL_TASKS_COMPLETE" "$PLAN" 2>/dev/null; then
     echo "=== All tasks complete after $((i + 1)) iterations ==="
+    echo "=== Generating changelog ==="
+    claude -p --model sonnet --dangerously-skip-permissions < "$CHANGELOG_PROMPT"
+    git push origin "$BRANCH" 2>/dev/null || true
     break
   fi
 
@@ -102,7 +123,7 @@ while [ $i -lt $MAX ]; do
 done
 
 if grep -q "^ALL_TASKS_COMPLETE" "$PLAN" 2>/dev/null; then
-  echo "=== All tasks complete after $i iterations ==="
+  echo "=== All tasks complete — changelog generated ==="
 else
   echo "=== Reached max iterations ($MAX) — open tasks may remain ==="
 fi
@@ -119,6 +140,7 @@ fi
 - `git push` after each iteration — progress is never lost even if the loop is interrupted.
 - `sleep 2` — prevents API rate limiting between iterations.
 - `ALL_TASKS_COMPLETE` sentinel — simple, grep-able completion signal. Prepended above all content so it's detectable regardless of plan format.
+- Changelog generation via `/generating-changelogs` — runs as a separate sonnet session on completion (fresh context, focused on synthesis). Mid-loop, the agent can also invoke the skill inline when enough work has accumulated.
 
 ### Phase 3: Verify `IMPLEMENTATION_PLAN.md`
 
