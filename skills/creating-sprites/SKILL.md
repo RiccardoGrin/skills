@@ -113,9 +113,15 @@ Every prompt must specify:
 - Anchoring: "touching the bottom of the image" for entities, "centered" for items
 - "Match the style of the provided reference images" when references are included
 
-## Phase 4: Generate Candidates
+## Phase 4: Generate and Validate (Max 3 Attempts)
 
-Run the generation script to produce 4 candidates (each is a separate API call — one sprite per image):
+You get **at most 3 generation attempts** per sprite. Each attempt produces 4 candidates. **Never delete candidates from previous attempts** — you will pick the best sprite across ALL attempts at the end.
+
+The `--name` flag sets the base filename. Use a short, descriptive slug for the sprite (e.g. `slime`, `health_potion`, `oak_tree`). Use a **versioned suffix** to prevent overwrites across attempts: `slime_v1`, `slime_v2`, `slime_v3`.
+
+### Attempt 1 — Initial Generation
+
+Generate with the prompt from Phase 3 (which requests transparent background):
 
 ```bash
 python scripts/generate_sprite.py \
@@ -124,58 +130,82 @@ python scripts/generate_sprite.py \
   --reference temp/ref1_upscaled.png \
   --reference temp/ref2_upscaled.png \
   --count 4 \
-  --name slime
+  --name slime_v1
 ```
 
-The `--name` flag sets the base filename. Use a short, descriptive slug for the sprite being created (e.g. `slime`, `health_potion`, `oak_tree`). Outputs: `slime_001.png` through `slime_004.png` in the output directory.
+Outputs: `slime_v1_001.png` through `slime_v1_004.png`.
 
-## Phase 5: Validate Candidates
+**Validate** (run on every attempt):
 
-Two-step validation: programmatic then visual.
+1. **Programmatic check** — run on each candidate:
+   ```bash
+   python scripts/check_transparency.py --input ./sprites-wip/slime_v1_001.png
+   ```
+   Output format:
+   ```
+   FILE: slime_v1_001.png
+   FORMAT: PNG
+   ALPHA_CHANNEL: yes
+   TRANSPARENT_PIXELS: 45.2%
+   CHECKERBOARD_DETECTED: no
+   RESULT: PASS
+   ```
+   - **PASS**: At least 10% transparent pixels, no checkerboard pattern
+   - **FAIL**: No alpha channel, 0% transparency, checkerboard detected, or not PNG
 
-### Step A — Programmatic Transparency Check
+2. **Visual inspection** — use the Read tool to view each passing candidate.
+   Check: single sprite? Correct orientation? Right proportions? Matches game style?
 
-Run on each candidate:
+If any candidate passes both checks → skip to **Pick the Best** below.
+
+### Attempts 2 and 3 — Diagnose Then Fix
+
+Before each retry, **diagnose the failure type** from Attempt 1 (and Attempt 2). The fix depends on the problem:
+
+#### Background problems (use prompt refinement, then chromakey)
+
+Symptoms: colored background instead of transparency, checkerboard pattern, unwanted scenery (grass, forest, inventory frame, etc.)
+
+- **Attempt 2**: Strengthen transparency language in prompt: "isolated sprite on transparent background, no checkerboard pattern, actual PNG transparency, no scenery, no environment"
+- **Attempt 3 (if background problems persist)**: Switch to **chromakey fallback** — this is the only situation that warrants chromakey:
+  - Pick a safe background color not present in the subject:
+    - **Green (#00FF00)**: safe for non-plant sprites
+    - **Magenta (#FF00FF)**: safe for plant/nature sprites, general-purpose fallback
+    - **Blue (#0000FF)**: safe for purple/magenta subjects
+  - Add to prompt: "solid flat [COLOR] background, no gradients, no patterns, no shadows"
+  - After generation, process with: `process_sprite.py remove-bg --chroma-color HEXCODE`
+  - Validate visually (transparency check will fail — that's expected). Check that the background is a clean, uniform color suitable for removal.
+
+#### Subject problems (use prompt refinement only — NOT chromakey)
+
+Symptoms: wrong proportions, wrong style, multiple sprites, missing details, wrong pose/orientation — but transparency is fine.
+
+- **Attempts 2 and 3**: Refine the prompt and/or change references. See `references/troubleshooting.md`. Chromakey does not help here — the problem is the subject, not the background. Keep iterating on prompt wording, style keywords, and reference images.
+
+#### Mixed problems (both background and subject issues)
+
+- Prioritize fixing the subject first (prompt refinement), since chromakey can always fix the background later
+- If subject looks good by Attempt 2 but background is still wrong, use chromakey for Attempt 3
+
 ```bash
-python scripts/check_transparency.py --input ./sprites-wip/slime_001.png
+python scripts/generate_sprite.py \
+  --prompt "Refined prompt ..." \
+  --output-dir ./sprites-wip \
+  --count 4 \
+  --name slime_v2   # then slime_v3 for attempt 3
 ```
 
-Output format:
-```
-FILE: slime_001.png
-FORMAT: PNG
-ALPHA_CHANNEL: yes
-TRANSPARENT_PIXELS: 45.2%
-CHECKERBOARD_DETECTED: no
-RESULT: PASS
-```
+Validate the same way after each attempt.
 
-- **PASS**: At least 10% transparent pixels, no checkerboard pattern
-- **FAIL**: No alpha channel, 0% transparency, checkerboard detected, or not PNG
-- Discard any candidate that fails
+### Pick the Best (across ALL attempts)
 
-### Step B — Visual Inspection
+After completing your attempts, review **all** candidates from every attempt — not just the latest batch. A sprite from Attempt 1 may be better than one from Attempt 3.
 
-Use the Read tool to view each passing candidate.
-Check: single sprite? Correct orientation? Right proportions? Matches game style?
-Pick the best candidate.
+Use the Read tool to compare the top candidates side-by-side and select the single best one for processing.
 
-### If All Candidates Fail Transparency
+### If All 3 Attempts Fail
 
-1. Retry once with stronger prompt: "isolated sprite on transparent background, no checkerboard pattern, actual PNG transparency"
-2. If still failing, switch to chromakey fallback:
-   - Analyze the sprite subject to pick a safe background color
-   - **Green (#00FF00)**: safe for non-plant sprites
-   - **Magenta (#FF00FF)**: safe for plant/nature sprites, general-purpose fallback
-   - **Blue (#0000FF)**: safe for purple/magenta subjects
-   - Add to prompt: "solid flat [COLOR] background, no gradients, no patterns, no shadows"
-   - After generation, process with: `process_sprite.py remove-bg --chroma-color HEXCODE`
-
-### If Candidates Fail Visual Check
-
-- Adjust the prompt (see `references/troubleshooting.md`)
-- Add, remove, or change reference images
-- After 3 total failed attempts, create a manual creation task and move on
+Create a manual creation task in the implementation plan and move on. Don't block progress on one asset. Save the best attempt as a reference for future manual work.
 
 ## Phase 6: Process Chosen Sprite
 
@@ -205,7 +235,7 @@ Read the final sprite to verify: correct dimensions, clean transparency, pixel-a
 
 1. Move the final sprite to the correct project folder
 2. Clean up temporary upscaled references (temp/)
-3. **Keep all candidates in `sprites-wip/`** — do NOT delete them. The descriptive filenames (from `--name`) make it easy to review rejected candidates later for manual selection
+3. **Keep all candidates in `sprites-wip/`** — do NOT delete any, from ANY attempt. The versioned filenames (`slime_v1_001.png`, `slime_v2_003.png`, etc.) make it easy to revisit rejected candidates later
 4. Update the implementation plan with integration tasks (add to asset registry, create entity config, etc.)
 
 ## Anti-Patterns
@@ -220,7 +250,10 @@ Read the final sprite to verify: correct dimensions, clean transparency, pixel-a
 | Green chromakey for plant sprites | Pick a chromakey color not present in the subject |
 | Skipping visual validation | Always Read the image to inspect after programmatic checks |
 | Cropping items | Items stay centered in canvas; only crop entities |
-| Giving up after 1 failed generation | Adjust prompt/refs and retry; give up after 3 total attempts |
+| Giving up after 1 failed generation | Up to 3 attempts; diagnose failure type and apply the right fix each time |
+| Using chromakey for subject problems | Chromakey fixes backgrounds only; for wrong style/proportions, refine the prompt |
+| Deleting candidates from earlier attempts | Keep ALL candidates; pick the best across all attempts at the end |
+| Reusing the same `--name` across attempts | Use versioned names (`slime_v1`, `slime_v2`, `slime_v3`) to prevent overwrites |
 
 ## Dependency Note
 
