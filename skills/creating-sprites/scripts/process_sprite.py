@@ -103,10 +103,10 @@ def crop_sprite(img: Image.Image, crop_mode: str) -> Image.Image:
             print("  Crop (bottom-anchor): image is fully transparent, no change")
             return img.copy()
 
-        left, top, right, _bottom = bbox
+        left, top, right, bottom = bbox
         original = img.size
-        # Keep bottom edge fixed — crop sides and top to content
-        cropped = img.crop((left, top, right, original[1]))
+        # Crop to content on all sides — ensures sprite touches the bottom edge
+        cropped = img.crop((left, top, right, bottom))
         print(f"  Crop (bottom-anchor): {original[0]}x{original[1]} -> {cropped.size[0]}x{cropped.size[1]}")
         return cropped
 

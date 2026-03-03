@@ -63,6 +63,7 @@ Go as deep as the project warrants — simple projects need 2-3 questions, compl
 - What does this project do? Who is it for? What's the mission? (skip if README is clear)
 - Are there conventions or patterns that differ from what you'd expect? (naming, architecture, data flow)
 - What has tripped you (or previous Claude sessions) up? What keeps going wrong?
+- Are there rules with exceptions? Things that are "always X... except when Y"? (These cause the most agent errors — e.g., "always use UTC... except the reporting module uses user timezone")
 - Any business decisions or constraints that affect how code should be written?
 - Are there key files or areas of the codebase that are non-obvious or tricky?
 
@@ -83,6 +84,7 @@ Only include sections with real content — omit empty sections entirely.
 ## Do / Don't
 - Do: [specific convention or pattern the agent should follow]
 - Don't: [specific thing that has caused problems or is explicitly wrong]
+- Do: [rule with exception] — except [when/where the exception applies]
 [Add more as discovered during development]
 
 ## Known Issues

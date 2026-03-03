@@ -45,6 +45,7 @@ Users are non-technical — every action must be obvious without documentation.
 - Do: validate all form inputs with zod at the boundary, then trust internal types
 - Don't: add loading spinners to instant operations — only show for >200ms delays
 - Don't: soft-delete anything in the onboarding_steps table — hard delete is fine, we have audit logs
+- Do: use UTC timestamps everywhere — except the reporting module which displays in user timezone
 
 ## Key Files
 - `lib/onboarding-engine.ts` — state machine for onboarding flow, all transitions go through here

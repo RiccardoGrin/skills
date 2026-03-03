@@ -31,8 +31,8 @@ All dimensions must be multiples of 16.
 ## Crop Modes
 
 **`bottom-anchor`** — For entities (enemies, player, animals, decorations, structures).
-Find the content bounding box, trim transparent pixels from left, right, and top.
-Keep the bottom edge fixed so the sprite's feet align with the ground/hitbox.
+Find the content bounding box, trim transparent pixels from all sides.
+Content touches the bottom edge of the output so the sprite's feet align with the ground/hitbox.
 
 **`center`** — For items.
 No cropping. The sprite stays centered within the full target canvas.

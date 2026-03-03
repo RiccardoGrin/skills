@@ -109,6 +109,7 @@ Explore the codebase systematically. Use sub-agents for parallel exploration whe
 - **Dependencies** — what systems, files, or modules will be affected by this change
 - **Similar implementations** — existing features that solve analogous problems, to maintain consistency
 - **Constraints** — technical limitations, conventions from AGENTS.md or CLAUDE.md, framework constraints
+- **Operational context** — git history, decision logs, known issues, and "except when" rules — tribal knowledge that doesn't live in code but affects how changes should be made
 
 **Document findings as:**
 
@@ -120,11 +121,13 @@ Explore the codebase systematically. Use sub-agents for parallel exploration whe
 
 Synthesize discovery, research, and analysis into an implementation-ready plan.
 
+**Describe outcomes, not mechanical steps.** "Make the auth middleware reject expired tokens and return 401" beats "Add an if-statement checking token.exp against Date.now()." Specify what the change should achieve — let the implementer choose the approach.
+
 **For each change, specify:**
 
 - File path (not line numbers)
 - What function, component, class, or section to modify
-- What to add, remove, or change — be specific
+- What to achieve and how — be specific about the outcome
 - Why this change serves the goal
 - Dependencies — what must happen first
 
