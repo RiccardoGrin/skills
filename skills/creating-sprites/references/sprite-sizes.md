@@ -8,17 +8,17 @@ All dimensions must be multiples of 16.
 
 | Sprite Type | Typical Size | Gen Size | Fake Pixel Factor | Crop Mode | Anchor | Notes |
 |-------------|-------------|----------|-------------------|-----------|--------|-------|
-| UI icon | 16x16 | 1K | 64px | none | — | Fill entire canvas |
-| Item | 32x32 | 1K | 32px | center | center | Centered for inventory |
-| Enemy | 32x32 | 1K | 32px | bottom-anchor | bottom | Hitbox alignment |
-| Terrain tile | 32x32 | 1K | 32px | none | — | Fill entire canvas |
-| Player | 32x32 | 1K | 32px | bottom-anchor | bottom | Ground alignment |
-| Small animal/pet | 32x32 | 1K | 32px | bottom-anchor | bottom | |
-| Large animal | 48x32 | 1K | ~21-32px | bottom-anchor | bottom | Wider; prompt for rect |
-| Small decoration | 32x32 | 1K | 32px | bottom-anchor | bottom | Crop to content |
-| Large decoration | 48x64+ | 1K-2K | varies | bottom-anchor | bottom | Trees, large props |
-| Boss enemy | 96x64+ | 2K | ~21-32px | bottom-anchor | bottom | Use 2K gen size |
-| Structure | 32x32–64x64 | 1K | varies | bottom-anchor | bottom | |
+| UI icon | 16x16 | 1024x1024 |64px | none | — | Fill entire canvas |
+| Item | 32x32 | 1024x1024 |32px | center | center | Centered for inventory |
+| Enemy | 32x32 | 1024x1024 |32px | bottom-anchor | bottom | Hitbox alignment |
+| Terrain tile | 32x32 | 1024x1024 |32px | none | — | Fill entire canvas |
+| Player | 32x32 | 1024x1024 |32px | bottom-anchor | bottom | Ground alignment |
+| Small animal/pet | 32x32 | 1024x1024 |32px | bottom-anchor | bottom | |
+| Large animal | 48x32 | 1024x1024 |~21-32px | bottom-anchor | bottom | Wider; prompt for rect |
+| Small decoration | 32x32 | 1024x1024 |32px | bottom-anchor | bottom | Crop to content |
+| Large decoration | 48x64+ | 1024x1536 | varies | bottom-anchor | bottom | Trees, large props; use portrait size |
+| Boss enemy | 96x64+ | 1536x1024 | ~16-21px | bottom-anchor | bottom | Use landscape size for wide bosses |
+| Structure | 32x32–64x64 | 1024x1024 |varies | bottom-anchor | bottom | |
 
 ## Size Rules
 
@@ -52,7 +52,7 @@ fake_pixel_factor = generation_size / target_dimension
 Examples:
 - 1024 / 32 = 32 real pixels per fake pixel
 - 1024 / 16 = 64 real pixels per fake pixel
-- 2048 / 64 = 32 real pixels per fake pixel
+- 1536 / 96 = 16 real pixels per fake pixel (landscape gen for wide boss)
 
 Each "fake pixel" in the generated image occupies `fake_pixel_factor × fake_pixel_factor` real pixels.
 Nearest-neighbor downscaling collapses these back to actual pixel-art dimensions.
@@ -61,8 +61,7 @@ Nearest-neighbor downscaling collapses these back to actual pixel-art dimensions
 
 For non-square targets (e.g., 48x32):
 - Include the aspect ratio in the prompt ("a 48x32 pixel art sprite, wider than tall")
-- Use `--aspect-ratio` flag in generate_sprite.py if needed (e.g., "3:2")
-- May need 2048 gen size for larger non-square sprites to maintain detail
+- Use `--size 1536x1024` for landscape sprites or `--size 1024x1536` for portrait sprites to match the subject's proportions
 - The fake pixel factor differs per axis — calculate each independently
 
 ## Why Entities Touch the Bottom

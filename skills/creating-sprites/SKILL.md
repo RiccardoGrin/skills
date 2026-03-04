@@ -1,11 +1,11 @@
 ---
 name: creating-sprites
-description: Guides pixel-art sprite creation via Gemini image generation with automated processing. Covers sizing, prompting, transparency verification, downscaling, and cropping. Use when creating game sprites or pixel art assets
+description: Guides pixel-art sprite creation via OpenAI gpt-image-1.5 image generation with automated processing. Covers sizing, prompting, transparency verification, downscaling, and cropping. Use when creating game sprites or pixel art assets
 ---
 
 # Creating Sprites
 
-Generate pixel-art game sprites via Gemini's native image generation API, then process them into game-ready assets with transparency, correct dimensions, and proper anchoring.
+Generate pixel-art game sprites via OpenAI's gpt-image-1.5 model with native transparent background support, then process them into game-ready assets with correct dimensions and proper anchoring.
 
 ## Reference Files
 
@@ -17,9 +17,9 @@ Generate pixel-art game sprites via Gemini's native image generation API, then p
 
 ## Prerequisites
 
-- **`GEMINI_API_KEY`** — a Google AI Studio API key (free at https://aistudio.google.com/apikey)
-  - The generate script auto-loads from: `--api-key` flag → `GEMINI_API_KEY` env var → `.env` file in current directory
-- **Python dependencies**: `google-genai` and `Pillow` (installed via `requirements.txt` in the skill's `scripts/` directory)
+- **`OPENAI_API_KEY`** — an OpenAI API key
+  - The generate script auto-loads from: `--api-key` flag → `OPENAI_API_KEY` env var → `.env` file in current directory
+- **Python dependencies**: `openai` and `Pillow` (installed via `requirements.txt` in the skill's `scripts/` directory)
 
 ## Script Paths
 
@@ -47,17 +47,17 @@ Before doing any work, verify the environment is ready. Handle what you can; onl
    python -c "
    import os
    from pathlib import Path
-   key = os.environ.get('GEMINI_API_KEY', '')
+   key = os.environ.get('OPENAI_API_KEY', '')
    if not key:
        env = Path('.env')
        if env.exists():
            for line in env.read_text().splitlines():
-               if line.strip().startswith('GEMINI_API_KEY'):
+               if line.strip().startswith('OPENAI_API_KEY'):
                    key = line.partition('=')[2].strip().strip('\"').strip(\"'\")
    print('OK' if key else 'MISSING')
    "
    ```
-   - If `MISSING`: ask the user to get a key from https://aistudio.google.com/apikey and either add `GEMINI_API_KEY=their-key` to a `.env` file in the project root, or export it as an environment variable
+   - If `MISSING`: ask the user to add `OPENAI_API_KEY=their-key` to a `.env` file in the project root, or export it as an environment variable
    - Do NOT proceed past this phase without a valid key
 
 2. **Install Python dependencies** (do this yourself, don't ask the user):
@@ -66,7 +66,7 @@ Before doing any work, verify the environment is ready. Handle what you can; onl
    ```
    Then verify:
    ```bash
-   python -c "from google import genai; from PIL import Image; print('OK')"
+   python -c "from openai import OpenAI; from PIL import Image; print('OK')"
    ```
    - If install fails due to permissions, try `pip install --user -r ...`
 
@@ -80,14 +80,14 @@ Identify what to create and look up its parameters.
 2. Read `references/sprite-sizes.md` for common size examples, generation size, and crop mode — use these as a starting point and adjust based on the specific entity
 3. Record these values:
    - `target_width` and `target_height` (e.g., 32x32)
-   - `generation_size` (1024 or 2048)
+   - `generation_size` (1024x1024 default)
    - `crop_mode` (bottom-anchor, center, or none)
 4. Identify the destination path in the project for the final sprite
 5. Identify 1-3 existing sprites that could serve as style references
 
 ## Phase 2: Prepare Reference Images
 
-Existing sprites are tiny and must be upscaled for the AI model to interpret them.
+Existing sprites are tiny and must be upscaled for the AI model to interpret them. Reference images are passed directly to the API via `--reference` flags for style matching.
 
 For each reference sprite, run:
 ```bash
@@ -104,9 +104,9 @@ The prompt alone will define the style.
 Read `references/prompt-guide.md` for the base template, style keywords, and per-type examples.
 
 Every prompt must specify:
-- Pixel-art style with era/palette keywords
+- Pixel-art style with era/palette keywords (derived from reference analysis in Phase 2)
 - Target fake-pixel dimensions ("a 32x32 pixel art sprite")
-- **Transparent background** (always request this first)
+- **Transparent background** (gpt-image-1.5 supports this natively)
 - ONE sprite only, centered in frame
 - No border, no shadow, no text, no grid
 - Subject description
@@ -121,7 +121,7 @@ The `--name` flag sets the base filename. Use a short, descriptive slug for the 
 
 ### Attempt 1 — Initial Generation
 
-Generate with the prompt from Phase 3 (which requests transparent background):
+Generate with the prompt from Phase 3. The script always requests a transparent background natively, whether or not reference images are provided.
 
 ```bash
 python scripts/generate_sprite.py \
@@ -160,27 +160,23 @@ If any candidate passes both checks → skip to **Pick the Best** below.
 
 ### Attempts 2 and 3 — Diagnose Then Fix
 
-Before each retry, **diagnose the failure type** from Attempt 1 (and Attempt 2). The fix depends on the problem:
+Before each retry, **diagnose the failure type** from previous attempts. The fix depends on the problem:
 
 #### Background problems (use prompt refinement, then chromakey)
 
 Symptoms: colored background instead of transparency, checkerboard pattern, unwanted scenery (grass, forest, inventory frame, etc.)
 
 - **Attempt 2**: Strengthen transparency language in prompt: "isolated sprite on transparent background, no checkerboard pattern, actual PNG transparency, no scenery, no environment"
-- **Attempt 3 (if background problems persist)**: Switch to **chromakey fallback** — this is the only situation that warrants chromakey:
-  - Pick a safe background color not present in the subject:
-    - **Green (#00FF00)**: safe for non-plant sprites
-    - **Magenta (#FF00FF)**: safe for plant/nature sprites, general-purpose fallback
-    - **Blue (#0000FF)**: safe for purple/magenta subjects
+- **Attempt 3 (if background problems persist)**: Switch to **chromakey fallback**:
+  - Pick a safe background color not present in the subject (see `references/troubleshooting.md`)
   - Add to prompt: "solid flat [COLOR] background, no gradients, no patterns, no shadows"
   - After generation, process with: `process_sprite.py remove-bg --chroma-color HEXCODE`
-  - Validate visually (transparency check will fail — that's expected). Check that the background is a clean, uniform color suitable for removal.
 
 #### Subject problems (use prompt refinement only — NOT chromakey)
 
 Symptoms: wrong proportions, wrong style, multiple sprites, missing details, wrong pose/orientation — but transparency is fine.
 
-- **Attempts 2 and 3**: Refine the prompt and/or change references. See `references/troubleshooting.md`. Chromakey does not help here — the problem is the subject, not the background. Keep iterating on prompt wording, style keywords, and reference images.
+- **Attempts 2 and 3**: Refine the prompt and/or adjust style keywords. See `references/troubleshooting.md`. Chromakey does not help here — the problem is the subject, not the background. Keep iterating on prompt wording and style descriptions.
 
 #### Mixed problems (both background and subject issues)
 
@@ -254,8 +250,9 @@ Read the final sprite to verify: correct dimensions, clean transparency, pixel-a
 | Using chromakey for subject problems | Chromakey fixes backgrounds only; for wrong style/proportions, refine the prompt |
 | Deleting candidates from earlier attempts | Keep ALL candidates; pick the best across all attempts at the end |
 | Reusing the same `--name` across attempts | Use versioned names (`slime_v1`, `slime_v2`, `slime_v3`) to prevent overwrites |
+| Using generic style keywords | Derive style keywords from studying the project's existing sprites |
 
 ## Dependency Note
 
-This skill requires `google-genai` and `Pillow`. Phase 0 handles installation automatically.
+This skill requires `openai` and `Pillow`. Phase 0 handles installation automatically.
 This is an approved exception to the standard-library-only rule for scripts.

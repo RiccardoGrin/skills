@@ -44,7 +44,9 @@ Study the project's existing sprites before choosing style keywords. Look at out
 
 ## Background Instructions
 
-**Default (try first):**
+The generate script requests transparent backgrounds natively via the API. Still mention transparency in the prompt to reinforce intent:
+
+**Default (sufficient in most cases):**
 ```
 transparent background
 ```
@@ -54,14 +56,14 @@ transparent background
 isolated sprite on transparent background, no checkerboard pattern, actual PNG transparency
 ```
 
-**Chromakey fallback (when transparency consistently fails):**
+**Chromakey fallback (last resort):**
 ```
 solid flat [COLOR] background, no gradients, no patterns, no shadows on background
 ```
 
 ## Reference Image Usage
 
-- Pass 1-3 upscaled reference sprites alongside the prompt
+- Pass 1-3 upscaled reference sprites via `--reference` flags — the script passes them directly to the model for style matching
 - Add: "Match the style of the provided reference images"
 - More than 3 references has diminishing returns and may confuse the model
 - If no references exist (first sprite in a project), rely on style keywords alone

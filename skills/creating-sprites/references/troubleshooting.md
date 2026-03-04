@@ -14,6 +14,8 @@
 
 ## Background Not Transparent
 
+**Note:** The generate script requests transparent backgrounds natively via the API, so this issue is rare. If it does occur:
+
 **Symptoms:** Image has a white, grey, or checkerboard background instead of transparency.
 
 **Diagnosis:**
@@ -22,7 +24,7 @@
 
 **Fix sequence:**
 1. Retry with stronger transparency prompt: "isolated sprite on transparent background, no checkerboard pattern, actual PNG transparency"
-2. If still failing after 1-2 retries, switch to chromakey fallback
+2. If still failing, switch to chromakey fallback
 3. Choose a safe chromakey color (see below)
 4. Regenerate with: "solid flat [COLOR] background, no gradients, no patterns, no shadows"
 5. Process with: `process_sprite.py remove-bg --chroma-color HEXCODE`
@@ -56,7 +58,7 @@
 **Fix:**
 - Be more explicit about dimensions in prompt: "a 32x32 pixel art sprite" → "a square 32x32 pixel art sprite, exactly as wide as it is tall"
 - For non-square sprites, state the ratio: "wider than tall, approximately 3:2 ratio"
-- Use 2048 generation size for non-square targets to give the model more room
+- Use `--size 1536x1024` (landscape) or `--size 1024x1536` (portrait) to give the model more room
 - Adjust `--crop-mode` if proportions are close but not exact
 
 ## Style Mismatch
@@ -97,17 +99,17 @@
 - Add more reference images (2-3) to strengthen the style signal
 - Describe the style explicitly in text alongside the references
 - Ensure references are properly upscaled (tiny 32px refs are nearly invisible to the model)
-- Verify upscaled references are being passed correctly to the API
+- Verify upscaled references are being passed correctly via `--reference` flags
 
 ## API Errors
 
 | Error | Cause | Fix |
 |-------|-------|-----|
-| 403 Forbidden | Invalid or expired API key | Check GEMINI_API_KEY env var |
+| 401 Unauthorized | Invalid or expired API key | Check OPENAI_API_KEY env var |
 | 429 Too Many Requests | Rate limit exceeded | Wait 30-60s between batches, reduce `--count` |
 | 500 Internal Server Error | Transient server issue | Retry after 10-30s |
-| No image in response | Prompt may be filtered by safety | Rephrase prompt, remove potentially flagged terms |
-| Empty candidates list | Model declined to generate | Simplify prompt, check for policy violations |
+| No image data in response | Unexpected response format | Check OpenAI API status, verify model ID |
+| Content policy violation | Prompt flagged by safety filter | Rephrase prompt, remove potentially flagged terms |
 
 ## Fallback: Manual Creation
 
