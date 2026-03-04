@@ -26,10 +26,14 @@ The loop only implements — but the agent can update the plan when it discovers
 Generate this script in the project root:
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env bash
 # Autonomous Claude Code implementation loop
-# Usage: ./loop.sh [max_iterations]
+# Usage: bash ./loop.sh [max_iterations]
 set -euo pipefail
+
+# Ensure Git Bash utilities are on PATH when invoked from PowerShell on Windows
+# (harmless no-op on macOS/Linux)
+export PATH="/usr/bin:/mingw64/bin:$PATH"
 
 MAX="${1:-10}"
 PLAN="IMPLEMENTATION_PLAN.md"
@@ -159,7 +163,10 @@ Adjust the generated `loop.sh`:
 
 - Set the model — opus for complex work, sonnet for straightforward tasks.
 - If the user wants restricted tool access, replace `--dangerously-skip-permissions` with `--allowedTools` and a whitelist tailored to the detected stack (e.g., `"Read,Glob,Grep,Edit,Write,Bash(git *),Bash(pnpm *),Bash(npx *),Task"`).
-- **Windows/PowerShell users**: `./loop.sh` won't execute directly in PowerShell — it triggers a "choose program" dialog. Instruct the user to run `bash ./loop.sh` instead (requires Git Bash on PATH, which is standard with Git for Windows). Do NOT generate a `.ps1` equivalent — PowerShell treats `-` as a unary operator and special characters (em dashes, etc.) break string parsing, making the prompt content unreliable.
+- **Windows/PowerShell users**: `./loop.sh` won't execute directly in PowerShell — it triggers a "choose program" dialog. Running `bash ./loop.sh` may also fail because PowerShell resolves `bash` to `C:\Windows\System32\bash.exe` (WSL launcher), not Git Bash. Instruct the user to either:
+  - Use the full Git Bash path: `& "C:\Program Files\Git\usr\bin\bash.exe" ./loop.sh 1`
+  - Or open a **Git Bash** terminal and run `./loop.sh 1` from there
+  The generated script includes `export PATH="/usr/bin:/mingw64/bin:$PATH"` which ensures Git Bash utilities (`mkdir`, `grep`, `cat`, etc.) are available even when Git Bash is invoked from PowerShell without its normal startup. Do NOT generate a `.ps1` equivalent — PowerShell treats `-` as a unary operator and special characters (em dashes, etc.) break string parsing, making the prompt content unreliable.
 
 ### Phase 5: Verification
 
@@ -167,9 +174,11 @@ Adjust the generated `loop.sh`:
 2. Verify `IMPLEMENTATION_PLAN.md` exists and has at least one `[ ]` task.
 3. **Do NOT attempt to run `loop.sh` from within Claude Code** — nested Claude sessions are forbidden and will error. The script must be run from a separate terminal.
 4. Show the user how to run it:
-   - `./loop.sh 10` — implement up to 10 tasks
-   - `./loop.sh 1` — implement just one task (for testing)
-5. Recommend: run `./loop.sh 1` first, review the result, then scale up.
+   - **macOS/Linux**: `./loop.sh 10` or `bash ./loop.sh 10`
+   - **Windows (Git Bash terminal)**: `./loop.sh 10`
+   - **Windows (PowerShell)**: `& "C:\Program Files\Git\usr\bin\bash.exe" ./loop.sh 10`
+   - Use `1` instead of `10` for a single test iteration
+5. Recommend: run with `1` first, review the result, then scale up.
 
 ## Anti-Patterns
 
