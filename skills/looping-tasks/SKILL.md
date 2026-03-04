@@ -91,6 +91,26 @@ Only run /generating-changelogs when the accumulated [x] items (not yet in CHANG
 a release that would feel meaningful to a player — not just "stuff got added."
 When in doubt, skip it — the end-of-loop completion will always generate a final changelog.
 
+AGENT TEAMS (optional — Claude Code only):
+Before starting implementation, consider whether the current task is complex enough to
+benefit from parallel work — e.g., cross-layer changes spanning frontend/backend/tests,
+or a task with clearly separable sub-components that touch different files.
+
+If the task warrants it:
+1. Check if agent teams are enabled: read ~/.claude/settings.json and look for
+   CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS set to "1" in the env block. If not enabled, skip this section.
+2. Spawn a small team (2-3 teammates max). Give each teammate a clear, scoped role:
+   - Example: "Frontend teammate: implement the UI components in src/components/"
+   - Example: "Backend teammate: add the API endpoint in src/api/"
+   - Example: "Test teammate: write tests for the new feature in tests/"
+3. Each teammate MUST own different files — two teammates editing the same file causes overwrites.
+4. Create tasks in the shared task list with clear dependencies if needed.
+5. Wait for all teammates to complete before proceeding to verification.
+6. Clean up the team (shut down teammates, delete team) before exiting.
+
+Most single tasks do NOT need a team — only use this for genuinely complex, parallelizable work.
+If team creation fails (e.g., not supported in current mode), fall back to solo implementation.
+
 HANDOFF: Commit all changes with a descriptive message (WHY not WHAT).
 If there is context the next iteration needs, write it to .claude/handoff.md.
 
@@ -147,6 +167,7 @@ fi
 - `sleep 2` — prevents API rate limiting between iterations.
 - `ALL_TASKS_COMPLETE` sentinel — simple, grep-able completion signal. Prepended above all content so it's detectable regardless of plan format.
 - Changelog generation via `/generating-changelogs` — runs as a separate sonnet session on completion (fresh context, focused on synthesis). Mid-loop, the agent can also invoke the skill inline when enough work has accumulated.
+- Agent teams section is conditional — the agent checks `~/.claude/settings.json` for the env var before attempting. If teams aren't enabled or fail in `-p` mode, the agent falls back to solo work. Kept to 2-3 teammates max to limit token cost within a single iteration. File ownership rule prevents merge conflicts from parallel edits.
 
 ### Phase 3: Verify `IMPLEMENTATION_PLAN.md`
 
@@ -189,3 +210,6 @@ Adjust the generated `loop.sh`:
 | Never reviewing loop output | Check the first few iterations, then spot-check periodically |
 | Restricting tools by default | Let the agent use code execution; restrict only when specifically needed |
 | Automating the planning step | Planning requires user decisions — keep it manual, let the loop implement |
+| Spawning teams for every task | Only use agent teams for genuinely complex, parallelizable tasks — most single tasks are faster solo |
+| Teammates editing the same files | Assign clear file ownership per teammate to prevent overwrites |
+| Leaving teams running after task completion | Always clean up teams before the iteration exits |
