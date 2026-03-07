@@ -46,13 +46,13 @@ Apply this when implementing every task below:
 
 ### Phase 3: Browser Testing
 
-- [ ] **Research browser testing approaches** — Before creating the skill, research what is actually working well for agent-driven browser testing and how they are implemented. Investigate: Playwright-based approaches (how teams wire Playwright into agent workflows), Stagehand (browser automation for AI agents), browser-use, what the OpenAI article describes (Chrome DevTools Protocol, DOM snapshots, screenshots, navigation), how other agent frameworks handle browser interaction, and any open-source tools purpose-built for agent-driven UI verification. Focus on what's production-grade vs. toy/demo quality. Examine Anthropic's existing webapp-testing skill to understand its limitations. Write findings to `docs/research/browser-testing.md` in the skills repo with front-matter. Update this plan with the chosen approach before proceeding to the next task.
+- [x] **Research browser testing approaches** — Findings in `docs/research/browser-testing.md`. Evaluated 8 approaches: Anthropic webapp-testing, Playwright MCP, Playwright Agents, Stagehand, Browser-Use, Dev-Browser, Vercel agent-browser, OpenAI CDP approach. Key findings: accessibility trees beat screenshots for token efficiency (10-100x), write-and-run scripts are more token-efficient than MCP per-tool-call, server lifecycle management is a solved problem. Chosen approach: Playwright-based write-and-run skill with accessibility tree snapshots, assertion helpers, console capture, and loop-integration patterns.
 
-- [ ] **Create `testing-browser` skill** — `skills/skills/testing-browser/` — (Approach TBD after research. Should be production-grade, not generic. Must enable agents to: start dev server, navigate pages, take screenshots, inspect DOM, capture console logs, verify UI behavior. Integrate with the looping-tasks VERIFY phase. Use `/creating-skills` workflow.)
+- [ ] **Create `testing-browser` skill** — `skills/testing-browser/` — Guided Workflow pattern (like enforcing-architecture). Playwright-based, self-contained, no MCP dependency. Core scripts: (1) `verify.py` — one-line assertion runner (URL + assertions like "text:Welcome", "no-console-errors") for VERIFY phases, (2) `snapshot.py` — returns accessibility tree snapshot (structured, LLM-friendly) instead of raw DOM, (3) `screenshot.py` — screenshot + accessibility tree dump side-by-side, (4) `with_server.py` — server lifecycle management (port waiting, multi-server). SKILL.md guides agents through: detecting what to test → choosing verification approach → writing/running verification scripts. Include one reference file with common assertion patterns by framework. Integrate with looping-tasks VERIFY phase. Use `/creating-skills` workflow. Run validator after.
 
 ### Phase 4: Housekeeping
 
-- [ ] **Update skills repo README.md** — `skills/README.md` — Add new skills to the Available Skills table. Fix existing issues: `generating-changelogs` is missing from the table; `creating-sprites` description says "Gemini" but SKILL.md says "gpt-image-1.5" — update to match SKILL.md.
+- [ ] **Update skills repo README.md** — `skills/README.md` — Add new skills to the Available Skills table. Fix existing issues: `generating-changelogs` is missing from the table; `creating-sprites` description says "Gemini" but SKILL.md says "gpt-image-1.5" — update to match SKILL.md. Delete the leftover `skills/skills/` directory.
 
 ## Decision Log
 
@@ -65,9 +65,13 @@ Apply this when implementing every task below:
 | Linter hooks over review checklists | The article's core insight: mechanical enforcement beats documentation-only rules. Hooks run automatically on every edit; skills rely on the agent remembering to invoke them |
 | Browser testing as custom skill | Existing marketplace options (including Anthropic's) are too generic for production use. No MCP dependency — we want a self-contained, production-grade skill |
 | Global CLAUDE.md changes out of scope | Lives in a different repo (dotfiles); useful additions noted but not tracked here |
+| Playwright write-and-run over MCP/Stagehand/Browser-Use | MCP adds external infrastructure dependency; Stagehand/Browser-Use add LLM API costs and cloud coupling; write-and-run scripts are more token-efficient per Playwright MCP's own docs; accessibility tree snapshots provide the token-efficiency win without MCP overhead |
+| No persistent browser daemon | Fresh browser per verification is simpler and more correct; persistent state adds complexity with marginal benefit for verification (not exploration) use cases |
+| Skills at `skills/<name>/` not `skills/skills/<name>/` | All existing skills live at `skills/<name>/`; the `skills/skills/` directory is an incomplete leftover from an earlier iteration |
 
 ## Issues Found
 
 <!-- Bugs or problems discovered during implementation -->
 - `generating-changelogs` missing from README.md Available Skills table
 - README says `creating-sprites` uses "Gemini" but SKILL.md says "gpt-image-1.5"
+- `skills/skills/` directory is an incomplete leftover (contains only `enforcing-architecture/references/` with no SKILL.md) — should be deleted during housekeeping
