@@ -42,7 +42,7 @@ Apply this when implementing every task below:
 
 - [x] **Update `planning` skill** — `skills/skills/planning/SKILL.md` — Phase 4 (Plan Construction): add "verification approach" field to each change spec, so loop agents know HOW to verify beyond "does it build." Example: "Verify: form submits on Enter, inline errors display, submit disabled during request." Keep it as a single added field in the existing change spec template, not a new section.
 
-- [ ] **Update `looping-tasks` VERIFY phase** — `skills/skills/looping-tasks/SKILL.md` — In the VERIFY section, add one line: "Run /simplify on files with substantial changes." That's it — don't duplicate what linters catch.
+- [x] **Update `looping-tasks` VERIFY phase** — `skills/skills/looping-tasks/SKILL.md` — In the VERIFY section, add one line: "Run /simplify on files with substantial changes." That's it — don't duplicate what linters catch.
 
 ### Phase 3: Browser Testing
 

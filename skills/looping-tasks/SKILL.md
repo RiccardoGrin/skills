@@ -104,6 +104,7 @@ VERIFY: Before marking a task done, check your work:
 - Verify new content is logically consistent with the rest of the project (e.g., labels make sense, data relationships are valid, config entries match code that references them)
 - If you added UI elements, verify layering/z-index doesn't obscure existing UI
 - Cross-reference any data/config files against the code that loads them — list gaps as new tasks
+- Run /simplify on files with substantial changes
 - Run the build/test command and confirm zero errors
 
 PLAN MAINTENANCE: After implementation, update the plan:
