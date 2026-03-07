@@ -29,6 +29,7 @@ Add keyboard shortcuts for common task actions (complete, delete, move up/down) 
 - **Action**: Add a `useEffect` hook that registers a `keydown` listener on the task list container. Only active when no text input is focused (check `document.activeElement`). Keys: `d` = complete, `Backspace` = delete, `j`/`k` = move selection down/up.
 - **Reasoning**: Centralizing the listener on the container (not individual items) avoids N listeners and simplifies cleanup.
 - **Depends on**: Nothing
+- **Verify**: Press `d`/`Backspace`/`j`/`k` with a task selected — correct action fires. Type in task title input — no shortcuts fire.
 
 ### 2. Add visual selection state to task items
 - **File**: `src/components/TaskItem.tsx`
@@ -36,6 +37,7 @@ Add keyboard shortcuts for common task actions (complete, delete, move up/down) 
 - **Action**: Accept a `selected` prop. When true, apply `ring-2 ring-blue-500` outline and set `aria-selected="true"`. Ensure the selected item scrolls into view using `scrollIntoView({ block: 'nearest' })`.
 - **Reasoning**: Keyboard navigation requires visible focus indication — the existing hover state is not sufficient.
 - **Depends on**: Nothing
+- **Verify**: Selected task shows blue ring outline and `aria-selected="true"` in DOM. Selecting off-screen task scrolls it into view.
 
 ### 3. Add keyboard shortcut toggle to settings
 - **File**: `src/components/Settings.tsx`
@@ -43,6 +45,7 @@ Add keyboard shortcuts for common task actions (complete, delete, move up/down) 
 - **Action**: Add a toggle switch for "Enable keyboard shortcuts" (default: on). Store preference in `localStorage` key `prefs.keyboardShortcuts`. The `TaskList` listener checks this before handling keys.
 - **Reasoning**: WCAG 2.1 SC 2.1.4 requires single-key shortcuts to be disablable.
 - **Depends on**: Nothing
+- **Verify**: Toggle off in settings — shortcuts stop firing. Toggle on — shortcuts work. Preference persists across page reload.
 
 ### 4. Add shortcut help overlay
 - **File**: `src/components/ShortcutHelp.tsx` (new file)
@@ -50,6 +53,7 @@ Add keyboard shortcuts for common task actions (complete, delete, move up/down) 
 - **Action**: Create a modal triggered by `?` key that displays a two-column table of shortcut keys and their actions. Dismiss with `Escape` or clicking outside. Use the existing `Modal` component from `src/components/ui/Modal.tsx`.
 - **Reasoning**: Discoverability — users need to learn what shortcuts exist. The `?` convention is standard (GitHub, Gmail, Linear all use it).
 - **Depends on**: Change 1 (the `?` key is handled by the same listener)
+- **Verify**: Press `?` — modal opens with shortcut table. Press `Escape` or click outside — modal closes.
 
 ## Edge Cases & Risks
 - User is typing in the task title edit field — shortcuts must not fire. Mitigated by checking `activeElement` tag name.
@@ -91,6 +95,7 @@ Add threaded comments to documents so collaborators can discuss specific text se
 - **Action**: Add `Comment` model with fields: `id`, `documentId` (relation to `Document`), `authorId` (relation to `User`), `body` (text), `anchorStart` (int), `anchorEnd` (int), `parentId` (nullable self-relation for threads), `resolved` (boolean, default false), `createdAt`, `updatedAt`.
 - **Reasoning**: Anchor positions stored as character offsets, transformed on each document edit. `parentId` enables threading without a separate model.
 - **Depends on**: Nothing
+- **Verify**: Run migration — table exists with all fields. Insert a comment with parentId — threading relation works.
 
 ### 2. Add comment API endpoints
 - **File**: `src/api/comments.ts`
@@ -98,6 +103,7 @@ Add threaded comments to documents so collaborators can discuss specific text se
 - **Action**: Add CRUD endpoints: `POST /documents/:id/comments` (create), `GET /documents/:id/comments` (list with thread nesting), `PATCH /comments/:id` (edit body, resolve), `DELETE /comments/:id` (soft delete). All endpoints require document read permission. Edit/delete restricted to comment author.
 - **Reasoning**: REST endpoints match existing API patterns in `src/api/`. Thread nesting handled in the GET query (group by `parentId`) rather than separate endpoints.
 - **Depends on**: Change 1 (needs the Comment model)
+- **Verify**: POST creates comment, GET returns nested threads, PATCH edits/resolves, DELETE soft-deletes. Non-author cannot edit/delete.
 
 **Checkpoint**: Run `prisma migrate dev`, hit endpoints with curl/Postman. Verify CRUD works, thread nesting returns correctly, permissions enforce.
 
@@ -109,6 +115,7 @@ Add threaded comments to documents so collaborators can discuss specific text se
 - **Action**: Create a plugin that renders highlight decorations at comment anchor positions. Decorations are yellow background for unresolved, grey for resolved. Clicking a decoration emits a `comment-select` event with the comment ID. Anchor positions update on document transactions using ProseMirror's `Mapping` API.
 - **Reasoning**: Decorations (not marks) are the correct ProseMirror pattern — they don't modify the document schema and survive edits to surrounding content.
 - **Depends on**: Change 2 (loads comments from API)
+- **Verify**: Comments render as yellow highlights at correct positions. Edit text around anchor — highlight stays in place. Resolved comments show grey.
 
 ### 4. Add text selection comment trigger
 - **File**: `src/editor/components/SelectionToolbar.tsx`
@@ -116,6 +123,7 @@ Add threaded comments to documents so collaborators can discuss specific text se
 - **Action**: Add a "Comment" button to the existing floating toolbar that appears on text selection. On click, capture the selection range and open the comment composer (Change 5).
 - **Reasoning**: Follows the existing selection toolbar pattern (already has Bold, Italic, Link buttons). Users expect comment creation from text selection.
 - **Depends on**: Change 3 (needs decoration plugin registered)
+- **Verify**: Select text — toolbar shows Comment button. Click it — composer opens with correct selection range.
 
 **Checkpoint**: Select text, click Comment button, verify highlight decoration appears at the correct position. Edit text before and after the highlight — verify anchor positions stay correct.
 
@@ -127,6 +135,7 @@ Add threaded comments to documents so collaborators can discuss specific text se
 - **Action**: Inline popover anchored to the decoration. Shows: existing thread (if any), reply textarea, resolve button (for thread author and document owner). Uses the existing `Popover` component from `src/components/ui/Popover.tsx`. Submits via the API from Change 2.
 - **Reasoning**: Inline popover (not sidebar) chosen based on research — matches our layout and the Notion pattern.
 - **Depends on**: Changes 2, 3, 4
+- **Verify**: Popover opens anchored to decoration. Submit a reply — it appears in thread. Resolve button visible for author. Dismisses on outside click.
 
 ### 6. Add comment indicators in document gutter
 - **File**: `src/editor/components/Gutter.tsx`
@@ -134,6 +143,7 @@ Add threaded comments to documents so collaborators can discuss specific text se
 - **Action**: Add small comment count badges next to lines that have associated comments. Clicking a badge scrolls to and opens the corresponding comment thread.
 - **Reasoning**: When documents have many comments, users need to scan for discussion without reading the full document. Gutter indicators are the standard pattern (VS Code, Google Docs).
 - **Depends on**: Change 3 (reads decoration positions)
+- **Verify**: Lines with comments show count badges. Click badge — scrolls to and opens thread. Count updates on comment add/resolve.
 
 **Checkpoint**: Full flow — select text, create comment, reply in thread, resolve. Verify gutter indicators appear and clicking them opens the thread. Test with 10+ comments on a document.
 
@@ -221,7 +231,7 @@ See `docs/plans/keyboard-shortcuts.md` for full context.
 
 ## Verification Notes in Plans
 
-When plans will be executed autonomously (via a loop), include a `## Notes` section at the end with verification guidance. This tells the loop agent what to check beyond "does it build?"
+Each change spec includes a `**Verify**` field with specific, observable checks. For loop-compatible output (one-line tasks), those per-change details can't fit inline. Include a `## Notes` section with general verification guidance the loop agent should apply:
 
 ```
 ## Notes
