@@ -1,3 +1,4 @@
+ALL_TASKS_COMPLETE
 <!-- When all tasks are done, the loop agent prepends ALL_TASKS_COMPLETE above this line -->
 
 # Skills Improvements (Harness Engineering)
@@ -52,7 +53,7 @@ Apply this when implementing every task below:
 
 ### Phase 4: Housekeeping
 
-- [ ] **Update skills repo README.md** — `skills/README.md` — Add new skills to the Available Skills table. Fix existing issues: `generating-changelogs` is missing from the table; `creating-sprites` description says "Gemini" but SKILL.md says "gpt-image-1.5" — update to match SKILL.md. Delete the leftover `skills/skills/` directory.
+- [x] **Update skills repo README.md** — `skills/README.md` — Add new skills to the Available Skills table. Fix existing issues: `generating-changelogs` is missing from the table; `creating-sprites` description says "Gemini" but SKILL.md says "gpt-image-1.5" — update to match SKILL.md. Delete the leftover `skills/skills/` directory.
 
 ## Decision Log
 
