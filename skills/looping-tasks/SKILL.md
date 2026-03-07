@@ -28,7 +28,7 @@ Generate this script in the project root:
 ```bash
 #!/usr/bin/env bash
 # Autonomous Claude Code implementation loop
-# Usage: bash ./loop.sh [max_iterations]
+# Usage: bash ./loop.sh [max_iterations] [resume_session_id]
 set -euo pipefail
 
 # Ensure Git Bash utilities are on PATH when invoked from PowerShell on Windows
@@ -36,11 +36,42 @@ set -euo pipefail
 export PATH="/usr/bin:/mingw64/bin:$PATH"
 
 MAX="${1:-10}"
+RESUME_ID="${2:-}"
 PLAN="IMPLEMENTATION_PLAN.md"
 BRANCH=$(git branch --show-current)
 PROMPT_FILE=".claude/loop-prompt.txt"
 CHANGELOG_PROMPT=".claude/changelog-prompt.txt"
 i=0
+
+# --- Interrupt handling ---
+IN_SESSION=false
+LAST_SESSION_ID=""
+
+cleanup() {
+    echo ""
+    if [ "$IN_SESSION" = true ]; then
+        echo "=== Loop interrupted mid-iteration ==="
+        echo "Uncommitted work may exist. Check: git status"
+        if [ -n "$LAST_SESSION_ID" ]; then
+            echo "Resume interrupted session: claude --resume $LAST_SESSION_ID"
+            echo "Or restart the loop with: bash ./loop.sh $MAX $LAST_SESSION_ID"
+        else
+            echo "Session ID unavailable. Start a new loop iteration to continue."
+        fi
+    else
+        echo "=== Loop stopped between iterations ==="
+        echo "All completed work is committed."
+    fi
+    exit 0
+}
+trap cleanup INT
+
+# --- UUID generator (cross-platform) ---
+gen_uuid() {
+    python3 -c "import uuid; print(uuid.uuid4())" 2>/dev/null || \
+    python -c "import uuid; print(uuid.uuid4())" 2>/dev/null || \
+    echo ""
+}
 
 [ ! -f "$PLAN" ] && echo "Missing $PLAN — create a plan first (use the planning skill or write one manually)" && exit 1
 
@@ -127,11 +158,43 @@ Commit the changelog update.
 CHANGELOG
 
 while [ $i -lt $MAX ]; do
+  echo ""
   echo "=== Iteration $((i + 1))/$MAX ==="
 
-  if ! claude -p --model opus --dangerously-skip-permissions < "$PROMPT_FILE"; then
-    echo "Claude exited with error — stopping loop"
-    exit 1
+  CLAUDE_EXIT=0
+
+  # Resume interrupted session if provided (first iteration only)
+  if [ -n "$RESUME_ID" ] && [ $i -eq 0 ]; then
+    IN_SESSION=true
+    LAST_SESSION_ID="$RESUME_ID"
+    claude --resume "$RESUME_ID" -p --dangerously-skip-permissions <<< "Continue where you left off. Check git status and the implementation plan, then complete the current task." || CLAUDE_EXIT=$?
+    IN_SESSION=false
+    RESUME_ID=""
+  else
+    LAST_SESSION_ID=$(gen_uuid)
+    SESSION_FLAG=""
+    [ -n "$LAST_SESSION_ID" ] && SESSION_FLAG="--session-id $LAST_SESSION_ID"
+    IN_SESSION=true
+    claude -p $SESSION_FLAG --model opus --dangerously-skip-permissions < "$PROMPT_FILE" || CLAUDE_EXIT=$?
+    IN_SESSION=false
+  fi
+
+  # One retry on error (handles transient rate limits)
+  if [ "$CLAUDE_EXIT" -ne 0 ]; then
+    IN_SESSION=true  # treat retry window as mid-iteration for trap messaging
+    echo "Claude exited with code $CLAUDE_EXIT — retrying in 60s (Ctrl+C to stop)..."
+    sleep 60
+    CLAUDE_EXIT=0
+    LAST_SESSION_ID=$(gen_uuid)
+    SESSION_FLAG=""
+    [ -n "$LAST_SESSION_ID" ] && SESSION_FLAG="--session-id $LAST_SESSION_ID"
+    IN_SESSION=true
+    claude -p $SESSION_FLAG --model opus --dangerously-skip-permissions < "$PROMPT_FILE" || CLAUDE_EXIT=$?
+    IN_SESSION=false
+    if [ "$CLAUDE_EXIT" -ne 0 ]; then
+      echo "Retry failed (exit code $CLAUDE_EXIT) — stopping loop"
+      exit 1
+    fi
   fi
 
   # Check completion (grep anywhere — sentinel may not be exactly line 1)
@@ -145,7 +208,14 @@ while [ $i -lt $MAX ]; do
 
   git push origin "$BRANCH" 2>/dev/null || git push -u origin "$BRANCH" 2>/dev/null || echo "Warning: git push failed — changes are committed locally but not backed up"
   i=$((i + 1))
-  sleep 2  # Prevents API rate limiting; increase if hitting limits, decrease for faster iteration
+
+  if [ $i -lt $MAX ]; then
+    echo ""
+    echo "=== Iteration $i complete. Pausing 10s before next iteration ==="
+    echo "=== Press Ctrl+C now to safely stop the loop ==="
+    sleep 10
+    echo "=== Starting iteration $((i + 1))/$MAX ==="
+  fi
 done
 
 if grep -q "^ALL_TASKS_COMPLETE" "$PLAN" 2>/dev/null; then
@@ -164,10 +234,14 @@ fi
 - "Only 1 subagent for builds and tests" — prevents resource contention.
 - "Stop after this one task" — critical for loop discipline; without it agents try to do everything.
 - `git push` after each iteration — progress is never lost even if the loop is interrupted.
-- `sleep 2` — prevents API rate limiting between iterations.
 - `ALL_TASKS_COMPLETE` sentinel — simple, grep-able completion signal. Prepended above all content so it's detectable regardless of plan format.
 - Changelog generation via `/generating-changelogs` — runs as a separate sonnet session on completion (fresh context, focused on synthesis). Mid-loop, the agent can also invoke the skill inline when enough work has accumulated.
 - Agent teams section is conditional — the agent checks `~/.claude/settings.json` for the env var before attempting. If teams aren't enabled or fail in `-p` mode, the agent falls back to solo work. Kept to 2-3 teammates max to limit token cost within a single iteration. File ownership rule prevents merge conflicts from parallel edits.
+- **SIGINT trap** — differentiates mid-iteration vs between-iteration interrupts. Mid-iteration: warns about uncommitted work and prints the session ID for `--resume`. Between iterations: confirms all work is committed and safe.
+- **Session ID tracking** — each iteration generates a UUID via `gen_uuid()` and passes it as `--session-id`. This guarantees we always know the session ID even if interrupted, enabling reliable `--resume`. The UUID generator tries `python3` then `python` then falls back to empty (session runs without an ID, which is fine — just no resume capability).
+- **10-second pause** — replaces the old `sleep 2`. Gives the user a visible window to Ctrl+C between iterations, edit the plan, or review commits. The pause message explicitly invites interruption.
+- **Resume support** — `./loop.sh 10 <session-id>` resumes an interrupted session on the first iteration, then continues the loop normally. Uses `--resume` with a continuation prompt that re-orients the agent.
+- **One retry on error** — if Claude exits non-zero (rate limit, transient failure), waits 60 seconds and retries once. Prevents a single hiccup from killing a long-running loop. Second failure exits immediately. The `|| CLAUDE_EXIT=$?` pattern captures the exit code without triggering `set -e`.
 
 ### Phase 3: Verify `IMPLEMENTATION_PLAN.md`
 
@@ -199,6 +273,7 @@ Adjust the generated `loop.sh`:
    - **Windows (Git Bash terminal)**: `./loop.sh 10`
    - **Windows (PowerShell)**: `& "C:\Program Files\Git\usr\bin\bash.exe" ./loop.sh 10`
    - Use `1` instead of `10` for a single test iteration
+   - **Resume after interrupt**: `./loop.sh 10 <session-id>` (the session ID is printed when you Ctrl+C mid-iteration)
 5. Recommend: run with `1` first, review the result, then scale up.
 
 ## Anti-Patterns
