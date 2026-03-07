@@ -47,7 +47,10 @@ This informs the interview — skip questions you can answer from config files.
 - Package manager and ecosystem (lock files, `packageManager` field, `package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod`, workspace configs like `pnpm-workspace.yaml`, `nx.json`, etc.)
 - Framework (dependencies in `package.json`, `pyproject.toml`, config files like `next.config.*`)
 - Test runner (jest/vitest/pytest config, `scripts.test`, `tests/` directory)
-- Linter/formatter (eslint, prettier, biome, ruff, black configs)
+- Formatter (prettier, biome format, black, ruff format configs)
+- Linter (eslint, biome lint, ruff check, pylint, clippy configs) — note separately from formatter, as linters inform hook generation in Phase 4
+- `ARCHITECTURE.md` — if present, note it; architecture enforcement is already partially set up
+- `docs/` directory — if present, note it and scan for front-matter summaries to include in the detection summary
 - Existing CLAUDE.md or AGENTS.md — if found, warn and ask whether to merge or replace. Merge = read existing content, preserve user-written sections, add new sections from the template that don't exist yet. Present the merged result for user approval before writing
 - README.md — extract project description
 
@@ -110,16 +113,27 @@ Do not duplicate those rules in the project CLAUDE.md unless the user's global c
 
 ### Phase 4: Generate Hooks
 
-Create `.claude/settings.json` with auto-format hooks based on the detected formatter.
+Create `.claude/settings.json` with PostToolUse hooks matching `Write|Edit`.
+
+**Formatter hooks** (auto-fix on every edit):
 
 **If Prettier:** `npx prettier --write $CLAUDE_FILE_PATH 2>/dev/null || true`
 **If Biome:** `npx @biomejs/biome format --write $CLAUDE_FILE_PATH 2>/dev/null || true`
 **If Ruff:** `ruff format $CLAUDE_FILE_PATH 2>/dev/null || true`
 **If Black:** `black $CLAUDE_FILE_PATH 2>/dev/null || true`
 
-Wrap in a PostToolUse hook matching `Write|Edit`.
-
 If no formatter is detected, suggest one appropriate for the stack but do not force it. Defaults: Prettier for JS/TS, Ruff for Python, gofmt for Go, rustfmt for Rust.
+
+**Linter hooks** (catch issues mechanically, not via instructions):
+
+If a linter was detected in Phase 1 but no lint hook exists, suggest a PostToolUse lint hook:
+**If ESLint:** `npx eslint --fix $CLAUDE_FILE_PATH 2>/dev/null || true`
+**If Biome:** `npx @biomejs/biome check --fix $CLAUDE_FILE_PATH 2>/dev/null || true`
+**If Ruff:** `ruff check --fix $CLAUDE_FILE_PATH 2>/dev/null || true`
+
+If no linter is detected and the project has 10+ source files, suggest adding one appropriate for the stack. Don't force it — present it as a recommendation with the benefit (mechanical enforcement catches issues automatically, no agent discipline required).
+
+For complex projects (multiple layers, clear architectural boundaries, or the user described layered architecture during the interview), mention `/enforcing-architecture` as a next step for setting up dependency-direction rules and structural checks.
 
 `.claude/settings.json` should be committed to git so project hooks are shared with the team.
 If `.claude/settings.local.json` exists (machine-specific overrides), ensure it's in `.gitignore`.
@@ -128,7 +142,7 @@ If `.claude/settings.local.json` exists (machine-specific overrides), ensure it'
 
 Read back every generated file and confirm:
 - CLAUDE.md is concise and contains only non-obvious information
-- Hooks point to the correct formatter
+- Hooks point to the correct formatter and linter
 - No generic boilerplate was included
 
 Present a summary listing all files created and their purpose.
