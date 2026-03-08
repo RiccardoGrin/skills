@@ -113,10 +113,6 @@ PLAN MAINTENANCE: After implementation, update the plan:
 
 CHANGELOG: Consider whether the completed work so far warrants a changelog update.
 Prefer bundling related work into larger, thematic updates over frequent small ones.
-For example: one new biome with its mobs is a minor addition — but three new biomes with full
-enemy rosters is a cohesive major update worth a version bump. Wait for the bigger story.
-Only run /generating-changelogs when the accumulated [x] items (not yet in CHANGELOG.md) form
-a release that would feel meaningful to a player — not just "stuff got added."
 When in doubt, skip it — the end-of-loop completion will always generate a final changelog.
 
 AGENT TEAMS (optional — Claude Code only):

@@ -15,11 +15,11 @@ npx skills add RiccardoGrin/skills
 | `creating-skills` | Stable | Guides creation of agent skills following best practices and the open format specification |
 | `listing-docs` | Stable | Scans `docs/` for markdown front-matter and lists summaries and `read_when` hints |
 | `planning` | Beta | Creates implementation-ready plans through discovery interviews, external research, and codebase analysis |
-| `initializing-projects` | Beta | Generates a tailored, self-maintaining CLAUDE.md for new projects through auto-detection and interviews |
+| `initializing-projects` | Beta | Generates a minimal, self-maintaining CLAUDE.md for projects through auto-detection and developer interview |
 | `looping-tasks` | Beta | Generates autonomous loop infrastructure for executing implementation plans across multiple Claude sessions |
 | `enforcing-architecture` | Beta | Guides setup of mechanical architecture enforcement — layer detection, dependency rules, check scripts, and hook wiring |
-| `generating-changelogs` | Beta | Generates player-facing changelogs from implementation plans and git history |
-| `testing-browser` | Beta | Guides browser-based UI verification using Playwright — accessibility snapshots, screenshots, and assertion-based checks |
+| `generating-game-changelogs` | Beta | Generates player-facing game changelogs from implementation plans and git history |
+| `testing-browser` | Beta | Guides browser-based UI verification using Playwright — server lifecycle, accessibility snapshots, screenshots, and assertion-based verification |
 | `creating-sprites` | Beta | Guides pixel-art sprite creation via OpenAI gpt-image-1.5 with automated processing |
 
 > **Maturity** indicates development status: *Draft* (in progress), *Beta* (usable, feedback welcome), *Stable* (production-ready).
