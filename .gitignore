@@ -25,3 +25,4 @@ __pycache__/
 *.pyc
 loop.sh
 /.claude
+IMPLEMENTATION_PLAN.md
