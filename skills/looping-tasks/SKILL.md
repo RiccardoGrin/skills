@@ -91,12 +91,8 @@ Consider dependencies, urgency, and what unblocks the most work.
 You are not required to go in order — use your judgment.
 
 IMPLEMENT: Do that one task thoroughly:
-- Study existing code before modifying — don't assume features are not implemented
-- Read CLAUDE.md (or equivalent project config) before creating content — follow any asset, design, or quality rules documented there
-- Check your available skills and tools before deferring work — you may have capabilities for asset creation (sprites, images, icons), content generation, or other tasks that seem "human-only." If a skill exists for it, attempt it rather than leaving a placeholder
-- Self-correct: if an intermediate result looks wrong (test failures, zero results, unexpected behavior), investigate the root cause and adjust your approach — don't just proceed or retry blindly
-- Write code, write tests, run tests until they pass
-- Run the linter/formatter if one is configured
+- Don't assume features are not implemented — study existing code first
+- Check your available skills and tools before deferring work — you may have capabilities for asset creation (sprites, images, icons, videos), content generation, or other tasks that seem "human-only." If a skill exists for it, attempt it rather than leaving a placeholder
 - Use only 1 subagent for builds and tests to avoid resource contention
 
 VERIFY: Before marking a task done, check your work:
@@ -226,24 +222,6 @@ else
 fi
 ```
 
-#### Design Choices
-
-- `--dangerously-skip-permissions` — the agent needs full tool access including code execution; this is the default for autonomous loops.
-- `--model opus` — strongest model for autonomous work; change to sonnet for simpler tasks.
-- Prompt written to temp file, then fed via `< "$PROMPT_FILE"` — the previous `cat <<'PROMPT' | claude ... || { ... }` pattern caused syntax errors on Windows/Git Bash because the heredoc-pipe-OR-brace combination doesn't parse reliably across shells. Writing to a file first is portable and equally readable.
-- "Don't assume features are not implemented" — prevents recreating existing code.
-- "Only 1 subagent for builds and tests" — prevents resource contention.
-- "Stop after this one task" — critical for loop discipline; without it agents try to do everything.
-- `git push` after each iteration — progress is never lost even if the loop is interrupted.
-- `ALL_TASKS_COMPLETE` sentinel — simple, grep-able completion signal. Prepended above all content so it's detectable regardless of plan format.
-- Changelog generation via `/generating-changelogs` — runs as a separate sonnet session on completion (fresh context, focused on synthesis). Mid-loop, the agent can also invoke the skill inline when enough work has accumulated.
-- Agent teams section is conditional — the agent checks `~/.claude/settings.json` for the env var before attempting. If teams aren't enabled or fail in `-p` mode, the agent falls back to solo work. Kept to 2-3 teammates max to limit token cost within a single iteration. File ownership rule prevents merge conflicts from parallel edits.
-- **SIGINT trap** — differentiates mid-iteration vs between-iteration interrupts. Mid-iteration: warns about uncommitted work and prints the session ID for `--resume`. Between iterations: confirms all work is committed and safe.
-- **Session ID tracking** — each iteration generates a UUID via `gen_uuid()` and passes it as `--session-id`. This guarantees we always know the session ID even if interrupted, enabling reliable `--resume`. The UUID generator tries `python3` then `python` then falls back to empty (session runs without an ID, which is fine — just no resume capability).
-- **10-second pause** — replaces the old `sleep 2`. Gives the user a visible window to Ctrl+C between iterations, edit the plan, or review commits. The pause message explicitly invites interruption.
-- **Resume support** — `./loop.sh 10 <session-id>` resumes an interrupted session on the first iteration, then continues the loop normally. Uses `--resume` with a continuation prompt that re-orients the agent.
-- **One retry on error** — if Claude exits non-zero (rate limit, transient failure), waits 60 seconds and retries once. Prevents a single hiccup from killing a long-running loop. Second failure exits immediately. The `|| CLAUDE_EXIT=$?` pattern captures the exit code without triggering `set -e`.
-
 ### Phase 3: Verify `IMPLEMENTATION_PLAN.md`
 
 The plan should already exist — the user creates it before running the loop (via the planning skill or manually).
@@ -257,7 +235,6 @@ The plan should already exist — the user creates it before running the loop (v
 
 Adjust the generated `loop.sh`:
 
-- Set the model — opus for complex work, sonnet for straightforward tasks.
 - If the user wants restricted tool access, replace `--dangerously-skip-permissions` with `--allowedTools` and a whitelist tailored to the detected stack (e.g., `"Read,Glob,Grep,Edit,Write,Bash(git *),Bash(pnpm *),Bash(npx *),Task"`).
 - **Windows/PowerShell users**: `./loop.sh` won't execute directly in PowerShell — it triggers a "choose program" dialog. Running `bash ./loop.sh` may also fail because PowerShell resolves `bash` to `C:\Windows\System32\bash.exe` (WSL launcher), not Git Bash. Instruct the user to either:
   - Use the full Git Bash path: `& "C:\Program Files\Git\usr\bin\bash.exe" ./loop.sh 1`
@@ -266,16 +243,15 @@ Adjust the generated `loop.sh`:
 
 ### Phase 5: Verification
 
-1. Read back `loop.sh` and confirm it is correct.
-2. Verify `IMPLEMENTATION_PLAN.md` exists and has at least one `[ ]` task.
-3. **Do NOT attempt to run `loop.sh` from within Claude Code** — nested Claude sessions are forbidden and will error. The script must be run from a separate terminal.
-4. Show the user how to run it:
+1. Get a subagent to read back `loop.sh` and confirm it is correct.
+2. **Do NOT attempt to run `loop.sh` from within Claude Code** — nested Claude sessions are forbidden and will error. The script must be run from a separate terminal.
+3. Show the user how to run it:
    - **macOS/Linux**: `./loop.sh 10` or `bash ./loop.sh 10`
    - **Windows (Git Bash terminal)**: `./loop.sh 10`
    - **Windows (PowerShell)**: `& "C:\Program Files\Git\usr\bin\bash.exe" ./loop.sh 10`
    - Use `1` instead of `10` for a single test iteration
    - **Resume after interrupt**: `./loop.sh 10 <session-id>` (the session ID is printed when you Ctrl+C mid-iteration)
-5. Recommend: run with `1` first, review the result, then scale up.
+4. Recommend: run with `1` first, review the result, then scale up.
 
 ## Anti-Patterns
 

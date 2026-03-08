@@ -56,16 +56,11 @@ Scan the project for:
 
 ### Phase 2: Ensure Playwright is Available
 
-Check if Playwright is installed:
+Check and install if needed:
 
 ```bash
-python -c "from playwright.sync_api import sync_playwright; print('OK')"
-```
-
-If not, install it:
-
-```bash
-pip install playwright && playwright install chromium
+python -c "from playwright.sync_api import sync_playwright; print('OK')" 2>/dev/null || \
+    (pip install playwright && playwright install chromium)
 ```
 
 ### Phase 3: Choose Verification Approach
@@ -138,25 +133,46 @@ python screenshot.py http://localhost:3000 --full-page --output full.png
 
 Saves the screenshot and prints the accessibility tree + any console errors to stdout.
 
-#### Custom Playwright scripts
+#### Custom Playwright Scripts
 
-For complex flows (login, multi-page, form submission), write a script directly:
+For complex flows, write a Playwright script directly. Focus on patterns the built-in scripts can't handle:
+
+**Waiting for async state** — assert after dynamic content settles:
 
 ```python
-from playwright.sync_api import sync_playwright
-
-with sync_playwright() as p:
-    browser = p.chromium.launch()
-    page = browser.new_page()
-    page.goto("http://localhost:3000/login")
-    page.fill("#email", "test@example.com")
-    page.fill("#password", "password123")
-    page.click("button[type=submit]")
-    page.wait_for_url("**/dashboard")
-    assert "Dashboard" in page.title()
-    print("PASS: Login flow works")
-    browser.close()
+page.goto("http://localhost:3000/dashboard")
+page.locator(".loading-spinner").wait_for(state="hidden", timeout=10000)
+assert page.locator("[data-testid=metrics]").count() > 0
+print("PASS: Dashboard loaded with metrics")
 ```
+
+**Testing across navigations** — multi-page flows where state carries over:
+
+```python
+page.goto("http://localhost:3000/cart")
+page.click("button:has-text('Checkout')")
+page.wait_for_url("**/checkout")
+page.fill("#address", "123 Main St")
+page.click("button:has-text('Place Order')")
+page.wait_for_url("**/confirmation")
+assert page.locator(".order-number").is_visible()
+print("PASS: Checkout flow completes end-to-end")
+```
+
+**Canvas/WebGL verification** — checking non-DOM content via pixel sampling:
+
+```python
+page.goto("http://localhost:3000/game")
+page.wait_for_timeout(2000)  # let canvas render
+screenshot = page.locator("canvas").screenshot()
+from PIL import Image; import io
+img = Image.open(io.BytesIO(screenshot))
+center = img.getpixel((img.width // 2, img.height // 2))
+assert center != (0, 0, 0, 0), "Canvas is not blank"
+print("PASS: Canvas rendered content")
+```
+
+See `references/assertion-patterns.md` for login flows and other common patterns.
 
 ### Phase 5: Integrate with Loops (Optional)
 
