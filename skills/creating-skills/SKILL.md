@@ -41,6 +41,12 @@ Match your specificity to the task's tolerance for variation:
 Don't teach programming, well-known APIs, or common patterns.
 Only add context Claude doesn't already have: project conventions, domain rules, non-obvious constraints.
 
+**Enforce mechanically, not with checklists.**
+If the skill's purpose is catching problems (review, audit, compliance), it should generate hooks, lint rules, or check scripts that run automatically — not be a list of things the agent must remember to check. A PostToolUse hook runs on every file edit; a skill instruction relies on agent discipline.
+
+**Don't duplicate existing tools.**
+Before building a skill, check what linters, formatters, and CI tools already handle in the target ecosystem. If ESLint catches unused imports, don't create a skill that also checks for them. Skills should add value beyond what standard tooling provides.
+
 ## Choose a Skill Pattern
 
 Before writing anything, identify which pattern fits the task:
@@ -249,6 +255,8 @@ Avoid these common mistakes (see `references/anti-patterns.md` for full details)
 | Unlisted reference files | List every file in the Reference Files table |
 | Time-sensitive claims | Use evergreen phrasing or link to sources |
 | Wrong voice in description | Use third-person: "Guides..." not "Guide..." |
+| Building enforcement as a checklist | Generate hooks, lint rules, or check scripts instead |
+| Duplicating linter/formatter functionality | Check what tools exist first; skills should add value beyond standard tooling |
 
 ## Related Skills
 
