@@ -23,3 +23,5 @@ node_modules/
 # Python
 __pycache__/
 *.pyc
+loop.sh
+/.claude
