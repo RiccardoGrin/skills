@@ -2,87 +2,24 @@
 
 > CLAUDE.md is a symlink to this file. Edit AGENTS.md only — CLAUDE.md will stay in sync automatically.
 
-## Project Overview
+## Overview
 
-This is a **content-only** repository of reusable agent skills. No package.json — skills are installed via `npx skills add <username>/skills` or manually via `cp -R skills/* ~/.claude/skills/`. The CLI scans for `SKILL.md` files inside `skills/` directories.
+Content-only repository of reusable agent skills.
+Skills installed via `npx skills add <username>/skills` or manual copy to `~/.claude/skills/`.
+The CLI scans for SKILL.md files inside `skills/` directories.
 
-## Project Structure
+## Do / Don't
 
-```
-skills/                          ← repo root
-├── AGENTS.md                    ← you are here
-├── CLAUDE.md                    ← symlink to AGENTS.md
-├── README.md
-└── skills/
-    └── <skill-name>/
-        ├── SKILL.md             ← required entry point
-        ├── references/          ← supporting docs loaded on demand
-        ├── scripts/             ← helper scripts (optional)
-        └── assets/              ← output files (optional, not loaded into context)
-```
-
-## Coding Style & Naming Conventions
-
-- **Skill names**: kebab-case, prefer gerund form (`creating-skills`, `analyzing-data`, not `skill-creator`, `data-analyzer`)
-- **File names**: kebab-case for markdown, snake_case for Python scripts
-- **Markdown**: ATX headings (`#`), one sentence per line in body text, fenced code blocks with language tag
-- **Python**: Standard library only by default — no external dependencies. Compatible with Python 3.8+. Individual skills may declare dependency exceptions in their SKILL.md (with a `requirements.txt` in `scripts/`).
-- **Paths**: Always use forward slashes, even in examples. Never use backslash paths.
-
-## Skill Authoring Rules
-
-### Frontmatter (required)
-
-- Must be the first thing in SKILL.md
-- Allowed keys: `name` (required), `description` (required), `version` (optional), `license` (optional), `compatibility` (optional), `metadata` (optional), `allowed-tools` (optional)
-- `name`: kebab-case, must match directory name, max 64 characters, no XML angle brackets (`<`, `>`)
-- `description`: Third-person voice, no period at end, no XML angle brackets. Formula: `[Does what] for/using [domain]. [Checks/covers what]. Use when [triggers]`
-- Recommend description under 300 characters for readability (spec maximum: 1024)
-
-### Body Rules
-
-- Target 150–300 lines for the main SKILL.md body
-- Hard limit: 500 lines (agents lose focus beyond this)
-- Only add context Claude doesn't already have — skip common programming knowledge, well-known APIs, and basic language syntax
-- Use progressive disclosure: put details in reference files, link from body
-- Every referenced file must be listed in a "Reference Files" table
-- Complex multi-step skills should include a copyable progress checklist
-- No "when to use" info in body — that belongs in the description
-- No auxiliary docs (README, CHANGELOG) inside skill directories
-
-### Reference Files
-
-- Place in `references/` subdirectory (one level deep only)
-- Files over 100 lines should include a table of contents
-- Every reference file must be listed in the SKILL.md body
-- Use conditional loading: "Read when [condition]"
-
-## Testing Approach
-
-- **Smoke test**: Install via `npx skills add` or manual copy to `~/.claude/skills/`
-- **Validation**: Run `python skills/<skill-name>/scripts/validate_skill.py skills/<skill-name>` if a validator exists
-- **Real usage test**: Start a new agent session and trigger the skill with a natural prompt
-- **Multi-model**: Test with at least Haiku and Sonnet to verify the skill works across capability levels
+- Do: use gerund-form kebab-case for skill names (`creating-skills`, not `skill-creator`)
+- Do: use `/creating-skills` when authoring or modifying a skill — it covers the full workflow, format spec, and validation
+- Do: one sentence per line in markdown body text (for clean diffs)
+- Do: one skill per PR; include a real-usage test result in the PR description
+- Do: update the Available Skills table in README.md when adding or removing a skill
+- Don't: add external Python dependencies unless declared in SKILL.md with a `requirements.txt` in `scripts/`
+- Don't: use backslash paths — always forward slashes
 
 ## Gotchas
 
-- Frontmatter is **required** — skills without it won't be indexed
-- Reference files must be linked from the SKILL.md body or they won't be discovered
-- The `npx skills` CLI reads from `skills/` directories specifically
-- No package.json needed — this is a pure content repository
-- Python scripts use standard library by default; skills with external deps must declare the exception in SKILL.md and provide `scripts/requirements.txt`
-
-## Commit & PR Guidelines
-
-- Commit messages: imperative mood, ≤72 chars first line
-- One skill per PR when adding new skills
-- Run the validator before opening a PR
-- PR description should include a real-usage test result
-
-## Maintenance
-
-- Periodically review skills against the latest best practices docs
-- Keep reference files up to date when the format specification changes
-- Archive deprecated skills by moving them to an `_archived/` directory
-- When adding or removing a skill, update the Available Skills table in `README.md`
-- When renaming folders or reference files, grep `AGENTS.md` and all `SKILL.md` files for stale paths
+- Frontmatter (`name`, `description`) is required — skills without it won't be indexed
+- Reference files must be linked from SKILL.md body or they won't be discovered
+- When renaming folders or reference files, grep all SKILL.md files for stale paths

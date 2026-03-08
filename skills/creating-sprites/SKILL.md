@@ -61,11 +61,7 @@ Before doing any work, verify the environment is ready. Handle what you can; onl
    - Do NOT proceed past this phase without a valid key
 
 2. **Install Python dependencies** (do this yourself, don't ask the user):
-   ```bash
-   pip install -r <skill-dir>/scripts/requirements.txt
-   python -c "from openai import OpenAI; from PIL import Image; print('OK')"
-   ```
-   If install fails due to permissions, try `pip install --user -r ...`
+   `pip install -r <skill-dir>/scripts/requirements.txt`
 
 Only the API key requires user action. Everything else you should handle yourself.
 
