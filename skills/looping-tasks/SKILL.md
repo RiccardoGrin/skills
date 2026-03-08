@@ -146,8 +146,6 @@ Stop after this one task.
 PROMPT
 
 cat > "$CHANGELOG_PROMPT" <<'CHANGELOG'
-Run /generating-changelogs
-
 Generate a changelog for all completed work in IMPLEMENTATION_PLAN.md.
 Only include tasks marked [x] that are NOT already covered by an existing CHANGELOG.md entry.
 If CHANGELOG.md already has entries, this is an incremental update — don't repeat previous content.

@@ -1,9 +1,9 @@
 ---
-name: generating-changelogs
-description: Generates player-facing changelogs from implementation plans and git history. Covers thematic intros, system-grouped sections, and concise flavor descriptions. Use when generating a changelog, writing release notes, or preparing an update post for itch.io or Steam
+name: generating-game-changelogs
+description: Generates player-facing game changelogs from implementation plans and git history. Covers thematic intros, system-grouped sections, and concise flavor descriptions. Use when generating a game changelog, writing game release notes, or preparing an update post for itch.io or Steam
 ---
 
-# Generating Changelogs
+# Generating Game Changelogs
 
 Generate a player-facing game changelog from a completed implementation plan and git history.
 
