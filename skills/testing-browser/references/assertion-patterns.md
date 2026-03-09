@@ -67,7 +67,14 @@ Use `snapshot.py` to inspect ARIA attributes (invalid, required, disabled):
 python snapshot.py http://localhost:3000/signup --selector "form"
 ```
 
-Look for `[required]`, `[invalid]`, `[disabled]` properties in the tree output.
+Output is YAML-like — look for `[required]`, `[invalid]`, `[disabled]` annotations:
+
+```yaml
+- textbox "Email" [required]:
+  - /placeholder: you@example.com
+- textbox "Password" [required]
+- button "Submit" [disabled]
+```
 
 ## Authentication Flows
 

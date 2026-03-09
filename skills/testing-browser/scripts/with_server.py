@@ -12,11 +12,11 @@ Examples:
     python with_server.py --cmd "npm run dev" --port 3000 --cmd "python api.py" --port 8000 -- python verify.py http://localhost:3000
 """
 
+import os
 import subprocess
 import sys
 import time
 import socket
-import signal
 import platform
 
 
@@ -36,15 +36,35 @@ def wait_for_port(port, host="localhost", timeout=30):
 
 
 def stop_process(proc):
-    """Stop a subprocess, forcefully if needed."""
-    try:
-        proc.terminate()
-        proc.wait(timeout=5)
-    except Exception:
+    """Stop a subprocess and its children, forcefully if needed."""
+    if IS_WINDOWS:
+        # On Windows, shell=True creates a process tree that proc.terminate()
+        # won't fully kill. Use taskkill with /T to kill the entire tree.
         try:
-            proc.kill()
+            subprocess.run(
+                ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
         except Exception:
-            pass
+            try:
+                proc.kill()
+            except Exception:
+                pass
+    else:
+        # On Unix, shell=True spawns a shell that may not forward signals
+        # to children. Kill the entire process group instead.
+        try:
+            os.killpg(os.getpgid(proc.pid), 15)  # SIGTERM
+            proc.wait(timeout=5)
+        except Exception:
+            try:
+                os.killpg(os.getpgid(proc.pid), 9)  # SIGKILL
+            except Exception:
+                try:
+                    proc.kill()
+                except Exception:
+                    pass
 
 
 def main():
@@ -97,9 +117,12 @@ def main():
     popen_kwargs = {}
     if IS_WINDOWS:
         popen_kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
+    else:
+        # Create a new process group so os.killpg can kill all children
+        popen_kwargs["preexec_fn"] = os.setsid
 
     for cmd, port in zip(cmds, ports):
-        print(f"Starting: {cmd} (waiting for port {port})")
+        print(f"Starting: {cmd} (waiting for port {port})", flush=True)
         proc = subprocess.Popen(
             cmd,
             shell=True,
@@ -119,7 +142,7 @@ def main():
             for p, _, _ in processes:
                 stop_process(p)
             sys.exit(1)
-        print(f"  Port {port} ready")
+        print(f"  Port {port} ready", flush=True)
 
     # Run the command
     exit_code = 1

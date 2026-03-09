@@ -20,10 +20,12 @@ Designed for loop agent VERIFY phases but works standalone.
 Playwright must be installed:
 
 ```bash
-pip install playwright && playwright install chromium
+pip install playwright && python -m playwright install chromium
 ```
 
 All scripts use only Playwright + Python standard library.
+
+> **Note:** Use `python -m playwright` instead of bare `playwright` — pip user installs may not add the script to PATH.
 
 ## Scripts
 
@@ -60,7 +62,7 @@ Check and install if needed:
 
 ```bash
 python -c "from playwright.sync_api import sync_playwright; print('OK')" 2>/dev/null || \
-    (pip install playwright && playwright install chromium)
+    (pip install playwright && python -m playwright install chromium)
 ```
 
 ### Phase 3: Choose Verification Approach
@@ -110,18 +112,18 @@ python snapshot.py http://localhost:3000
 python snapshot.py http://localhost:3000 --selector "#main-content"
 ```
 
-Returns a structured tree:
+Returns a YAML-like tree:
 
-```
-heading "Welcome to My App" [level=1]
-navigation "Main"
-  link "Home"
-  link "About"
-main
-  heading "Dashboard" [level=2]
-  list
-    listitem "Task 1"
-    listitem "Task 2"
+```yaml
+- heading "Welcome to My App" [level=1]
+- navigation "Main":
+  - link "Home"
+  - link "About"
+- main:
+  - heading "Dashboard" [level=2]
+  - list:
+    - listitem "Task 1"
+    - listitem "Task 2"
 ```
 
 #### screenshot.py (visual + diagnostic)
@@ -132,6 +134,15 @@ python screenshot.py http://localhost:3000 --full-page --output full.png
 ```
 
 Saves the screenshot and prints the accessibility tree + any console errors to stdout.
+
+#### SPA / Client-Rendered Apps
+
+All scripts use `wait_until="load"` which fires before client-side JavaScript renders content or performs redirects.
+For React, Next.js, and other SPA frameworks:
+
+- **`text:` and `visible:` assertions in `verify.py` handle this** — they internally wait up to 5s for elements to appear
+- **`url:` assertions check immediately** — they will miss client-side redirects. For redirect testing, use a custom script with `page.wait_for_url("**/path", timeout=10000)`
+- **`snapshot.py` and `screenshot.py`** capture what's rendered at page load. For async content, add a `--selector` that only appears after loading completes, which forces the script to wait
 
 #### Custom Playwright Scripts
 

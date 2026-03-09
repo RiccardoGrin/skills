@@ -4,7 +4,7 @@
 Usage:
     python snapshot.py URL [--selector SELECTOR] [--timeout MS]
 
-Output: Indented text tree showing roles, names, and properties.
+Output: YAML-like indented tree showing roles, names, and properties.
 Structured for LLM consumption — far more token-efficient than raw HTML or screenshots.
 
 Examples:
@@ -14,63 +14,6 @@ Examples:
 
 import argparse
 import sys
-
-
-def format_node(node, indent=0):
-    """Format an accessibility tree node as readable indented text."""
-    if not node:
-        return ""
-
-    lines = []
-    role = node.get("role", "")
-    name = node.get("name", "")
-
-    # Skip generic containers with no semantic info — still process children
-    if role in ("generic", "none", "") and not name:
-        for child in node.get("children", []):
-            child_text = format_node(child, indent)
-            if child_text:
-                lines.append(child_text)
-        return "\n".join(lines)
-
-    # Build node description
-    prefix = "  " * indent
-    parts = [role]
-    if name:
-        parts.append(f'"{name}"')
-
-    # Key properties
-    props = []
-    if node.get("level"):
-        props.append(f"level={node['level']}")
-    if node.get("checked") is not None:
-        props.append(f"checked={node['checked']}")
-    if node.get("disabled"):
-        props.append("disabled")
-    if node.get("required"):
-        props.append("required")
-    if node.get("expanded") is not None:
-        props.append(f"expanded={node['expanded']}")
-    if node.get("selected"):
-        props.append("selected")
-    if node.get("valuetext"):
-        props.append(f"value={node['valuetext']}")
-    if node.get("invalid"):
-        props.append(f"invalid={node['invalid']}")
-    if node.get("focused"):
-        props.append("focused")
-
-    if props:
-        parts.append(f"[{', '.join(props)}]")
-
-    lines.append(prefix + " ".join(parts))
-
-    for child in node.get("children", []):
-        child_text = format_node(child, indent + 1)
-        if child_text:
-            lines.append(child_text)
-
-    return "\n".join(lines)
 
 
 def main():
@@ -87,7 +30,7 @@ def main():
         from playwright.sync_api import sync_playwright
     except ImportError:
         print(
-            "Playwright not installed. Run: pip install playwright && playwright install chromium",
+            "Playwright not installed. Run: pip install playwright && python -m playwright install chromium",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -111,12 +54,12 @@ def main():
                 print(f"Selector '{args.selector}' not found", file=sys.stderr)
                 browser.close()
                 sys.exit(1)
-            root = page.accessibility.snapshot(root=locator.element_handle())
+            snapshot = locator.aria_snapshot()
         else:
-            root = page.accessibility.snapshot()
+            snapshot = page.locator("body").aria_snapshot()
 
-        if root:
-            print(format_node(root))
+        if snapshot:
+            print(snapshot)
         else:
             print("(empty accessibility tree)", file=sys.stderr)
 
