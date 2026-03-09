@@ -13,6 +13,7 @@ Examples:
 """
 
 import os
+import shlex
 import subprocess
 import sys
 import time
@@ -52,8 +53,7 @@ def stop_process(proc):
             except Exception:
                 pass
     else:
-        # On Unix, shell=True spawns a shell that may not forward signals
-        # to children. Kill the entire process group instead.
+        # On Unix, kill the entire process group to ensure all children stop.
         try:
             os.killpg(os.getpgid(proc.pid), 15)  # SIGTERM
             proc.wait(timeout=5)
@@ -123,13 +123,23 @@ def main():
 
     for cmd, port in zip(cmds, ports):
         print(f"Starting: {cmd} (waiting for port {port})", flush=True)
-        proc = subprocess.Popen(
-            cmd,
-            shell=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            **popen_kwargs,
-        )
+        if IS_WINDOWS:
+            # Windows: keep shell=True for proper command parsing
+            proc = subprocess.Popen(
+                cmd,
+                shell=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                **popen_kwargs,
+            )
+        else:
+            # Unix: split command into list to avoid shell=True
+            proc = subprocess.Popen(
+                shlex.split(cmd),
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                **popen_kwargs,
+            )
         processes.append((proc, port, cmd))
 
     # Wait for all ports
