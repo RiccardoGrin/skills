@@ -126,7 +126,7 @@ def main():
         from playwright.sync_api import sync_playwright
     except ImportError:
         print(
-            "Playwright not installed. Run: pip install playwright && playwright install chromium",
+            "Playwright not installed. Run: pip install playwright && python -m playwright install chromium",
             file=sys.stderr,
         )
         sys.exit(1)

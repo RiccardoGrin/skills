@@ -21,7 +21,7 @@ def main():
     parser = argparse.ArgumentParser(description="Screenshot + accessibility tree + console errors")
     parser.add_argument("url", help="URL to screenshot")
     parser.add_argument("--output", "-o", default="screenshot.png", help="Output file path")
-    parser.add_argument("--selector", help="CSS selector to screenshot (element only)")
+    parser.add_argument("--selector", help="CSS selector to scope screenshot and accessibility tree")
     parser.add_argument("--full-page", action="store_true", help="Capture full scrollable page")
     parser.add_argument(
         "--timeout", type=int, default=10000,
@@ -71,8 +71,9 @@ def main():
 
         print(f"Screenshot saved: {args.output}")
 
-        # Accessibility tree
-        snapshot = page.locator("body").aria_snapshot()
+        # Accessibility tree (scoped to selector if provided)
+        tree_root = page.locator(args.selector).first if args.selector else page.locator("body")
+        snapshot = tree_root.aria_snapshot()
         if snapshot:
             print("\n<accessibility-tree>")
             print(snapshot)

@@ -30,12 +30,25 @@ python verify.py http://localhost:3000/about \
     --assert "url:about"
 ```
 
+> **Note:** `url:` checks the URL immediately after page load. This works for direct navigation (the URL is already set by the request) but will miss client-side redirects. For redirect testing, use a custom Playwright script with `page.wait_for_url()`.
+
 ### Dynamic content rendered (not stuck loading)
 
 ```bash
 python verify.py http://localhost:3000/dashboard \
     --assert "visible:[data-testid=dashboard]" \
     --assert "no-text:Loading..."
+```
+
+### Cold dev server (slow first compile)
+
+The default navigation timeout is 10s. For Next.js/Vite dev servers that compile on first request, use `--timeout`:
+
+```bash
+python verify.py http://localhost:3000 \
+    --timeout 30000 \
+    --assert "text:Welcome" \
+    --assert "no-console-errors"
 ```
 
 ## Static Sites

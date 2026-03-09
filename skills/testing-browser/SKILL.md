@@ -131,18 +131,21 @@ Returns a YAML-like tree:
 ```bash
 python screenshot.py http://localhost:3000 --output screenshot.png
 python screenshot.py http://localhost:3000 --full-page --output full.png
+python screenshot.py http://localhost:3000 --selector "#main-content" --output main.png
 ```
 
 Saves the screenshot and prints the accessibility tree + any console errors to stdout.
+When `--selector` is provided, both the visual screenshot and the accessibility tree are scoped to that element.
 
 #### SPA / Client-Rendered Apps
 
-All scripts use `wait_until="load"` which fires before client-side JavaScript renders content or performs redirects.
+All scripts use `wait_until="load"` which fires after initial HTML and resources load, but potentially before client-side JavaScript finishes rendering or performing redirects.
 For React, Next.js, and other SPA frameworks:
 
 - **`text:` and `visible:` assertions in `verify.py` handle this** — they internally wait up to 5s for elements to appear
 - **`url:` assertions check immediately** — they will miss client-side redirects. For redirect testing, use a custom script with `page.wait_for_url("**/path", timeout=10000)`
-- **`snapshot.py` and `screenshot.py`** capture what's rendered at page load. For async content, add a `--selector` that only appears after loading completes, which forces the script to wait
+- **`screenshot.py` visual captures may be blank** for pages that redirect or render client-side — use `--selector` to wait for a specific element, or use a custom script for redirect pages
+- **`snapshot.py`** captures the accessibility tree at page load. For async content, add a `--selector` that only appears after loading completes, which forces the script to wait
 
 #### Custom Playwright Scripts
 
