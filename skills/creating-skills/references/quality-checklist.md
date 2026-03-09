@@ -49,7 +49,7 @@ Pre-ship validation checklist for skills. Score each item: Yes = 1, No = 0, N/A 
 | # | Check | ⛔ |
 |---|-------|----|
 | 25 | Scripts use only the standard library (no pip/npm installs) | ⛔ |
-| 26 | Scripts work cross-platform (no `chmod`, no OS-specific paths) | |
+| 26 | Scripts work on both Windows and macOS/Linux — OS-specific operations (process cleanup, CLI invocations) branch on `platform.system()` | ⛔ |
 | 27 | Scripts have usage instructions in docstring or `--help` | |
 | 28 | Scripts handle errors explicitly with actionable messages (don't punt to the agent) | |
 | 29 | No unexplained magic constants — named variables or comments for non-obvious values | |

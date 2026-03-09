@@ -18,6 +18,7 @@ Common mistakes when authoring skills. Avoid these.
 - [Under-Specifying Critical Operations](#under-specifying-critical-operations)
 - [Assuming Tools Are Installed](#assuming-tools-are-installed)
 - [Punting Errors to the Agent](#punting-errors-to-the-agent)
+- [Platform-Specific Scripts](#platform-specific-scripts)
 
 ## Over-Explaining
 
@@ -193,4 +194,29 @@ if not frontmatter.get("name"):
     print("  Add a kebab-case name matching the directory name.")
     print("  Example: name: analyzing-data")
     sys.exit(1)
+```
+
+## Platform-Specific Scripts
+
+**Problem**: Scripts that only work on one OS — using Unix-only APIs (`os.killpg`, `os.setsid`), Windows-only tools (`taskkill`), or assuming shell behavior that differs across platforms (e.g., `shell=True` process tree cleanup).
+
+**Fix**: Skills must work on both Windows and macOS/Linux.
+Branch on `platform.system()` for OS-specific operations.
+Common pitfalls:
+
+- **Process cleanup**: `proc.terminate()` with `shell=True` doesn't kill child processes on either OS. Use `taskkill /F /T /PID` on Windows, `os.killpg` with `os.setsid` on Unix.
+- **CLI tools on PATH**: pip user installs may not add scripts to PATH on Windows. Prefer `python -m <tool>` over bare `<tool>`.
+- **Signals**: `SIGTERM`/`SIGKILL` constants don't exist on Windows. Use numeric values (15, 9) or branch.
+
+```python
+# Bad: Unix-only
+import os, signal
+os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+
+# Good: cross-platform
+import platform, subprocess, os
+if platform.system() == "Windows":
+    subprocess.run(["taskkill", "/F", "/T", "/PID", str(proc.pid)])
+else:
+    os.killpg(os.getpgid(proc.pid), 15)
 ```

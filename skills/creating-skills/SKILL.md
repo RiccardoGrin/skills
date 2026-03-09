@@ -257,6 +257,7 @@ Avoid these common mistakes (see `references/anti-patterns.md` for full details)
 | Wrong voice in description | Use third-person: "Guides..." not "Guide..." |
 | Building enforcement as a checklist | Generate hooks, lint rules, or check scripts instead |
 | Duplicating linter/formatter functionality | Check what tools exist first; skills should add value beyond standard tooling |
+| Platform-specific scripts without fallbacks | Scripts must work on both Windows and macOS/Linux — branch on `platform.system()` where needed |
 
 ## Related Skills
 
