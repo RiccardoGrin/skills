@@ -1,12 +1,15 @@
 ---
 name: enforcing-architecture
-description: Guides setup of mechanical architecture enforcement for projects. Covers layer detection, dependency rules, check scripts, and hook wiring. Use when establishing architecture boundaries, enforcing dependency direction, or preventing structural drift
+description: Sets up automated architecture enforcement via check scripts and hooks that catch layer violations on every file edit. Run after `/initializing-projects` for complex projects with 3+ distinct layers, or when no ARCHITECTURE.md exists and the codebase has clear architectural boundaries worth enforcing mechanically
 ---
 
 # Enforcing Architecture
 
-Set up automated architecture enforcement that catches violations on every file edit — not documentation agents might skip.
-The goal: a check script wired into hooks, with educational error messages telling agents how to fix violations.
+Set up mechanical architecture enforcement — not prompts asking the agent to "be careful," but a check script wired into hooks that runs on every file edit and catches layer violations automatically.
+
+**Output:** An `ARCHITECTURE.md`, a check script (`scripts/check-architecture.{py,mjs,sh}`), and a PostToolUse hook that shows violations to the agent inline.
+
+**When to use:** After project initialization, or when a project has clear layers (controllers/services/models, app/lib/data, etc.) that should not import in the wrong direction. Skip for small projects, prototypes, or single-layer apps.
 
 ## Reference Files
 
