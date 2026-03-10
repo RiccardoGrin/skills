@@ -53,18 +53,13 @@
 
 ## Audio Format Issues
 
-### WAV file is unexpectedly large
-- WAV is uncompressed; a 1-hour video produces ~500MB+ of WAV audio
-- The download script uses 16kHz mono to reduce size
-- If still too large, the script auto-splits into chunks
-
 ### "Codec not supported" errors
 - Ensure ffmpeg is installed with common codec support
-- Try re-encoding: `ffmpeg -i input.wav -acodec pcm_s16le -ar 16000 -ac 1 output.wav`
+- Try re-encoding: `ffmpeg -i input.mp3 -acodec libmp3lame -ar 16000 -ac 1 output.mp3`
 
 ## General Tips
 
 - **Cost awareness**: Whisper API costs ~$0.006/minute of audio. A 1-hour video costs ~$0.36
 - **Caching**: Always check `transcriptions/<VIDEO_ID>_transcript.txt` before re-processing
-- **Disk space**: Clean up WAV files after transcription; they're large and no longer needed
+- **Disk space**: Clean up mp3 files after transcription; they're no longer needed
 - **Long videos**: Videos over 3 hours will produce very large transcripts; consider whether a summary of specific sections would be more useful

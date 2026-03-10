@@ -2,20 +2,19 @@
 
 Usage:
     # Single file
-    python transcribe_audio.py --input audio.wav --output transcript.txt
+    python transcribe_audio.py --input audio.mp3 --output transcript.txt
 
     # Chunked files (auto-discovers chunks by video ID)
     python transcribe_audio.py --input-dir transcriptions --video-id VIDEO_ID --output transcript.txt
 
     # With timestamps
-    python transcribe_audio.py --input audio.wav --output transcript.txt --timestamps
+    python transcribe_audio.py --input audio.mp3 --output transcript.txt --timestamps
 
 Requires OPENAI_API_KEY environment variable or .env file.
 """
 
 import argparse
 import os
-import re
 import sys
 from pathlib import Path
 
@@ -46,12 +45,11 @@ def transcribe_file(client, file_path: str, timestamps: bool = False) -> str:
                 file=audio_file,
                 response_format="verbose_json",
             )
-            # Build timestamped text
             lines = []
             for segment in response.segments:
-                start = format_timestamp(segment['start'])
-                end = format_timestamp(segment['end'])
-                text = segment['text'].strip()
+                start = format_timestamp(segment.start)
+                end = format_timestamp(segment.end)
+                text = segment.text.strip()
                 lines.append(f"[{start} -> {end}] {text}")
             return '\n'.join(lines)
         else:
@@ -102,10 +100,10 @@ def main():
     else:
         input_dir = Path(args.input_dir)
         # Find chunks sorted by number
-        chunks = sorted(input_dir.glob(f"{args.video_id}_chunk_*.wav"))
+        chunks = sorted(input_dir.glob(f"{args.video_id}_chunk_*.mp3"))
         if not chunks:
             # Try single file
-            single = input_dir / f"{args.video_id}.wav"
+            single = input_dir / f"{args.video_id}.mp3"
             if single.exists():
                 files = [str(single)]
             else:

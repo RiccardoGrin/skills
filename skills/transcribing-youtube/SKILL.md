@@ -90,17 +90,17 @@ python scripts/download_audio.py --url "YOUTUBE_URL" --output-dir transcriptions
 
 The script:
 - Downloads the best available audio stream
-- Converts to WAV format (required by Whisper API)
+- Converts to mp3 (Whisper accepts it and it's ~10x smaller than WAV)
 - Splits files larger than 25MB into chunks (Whisper API limit)
 - Outputs metadata: title, duration, video ID, file path(s)
-- Names files as `<VIDEO_ID>.wav` (or `<VIDEO_ID>_chunk_001.wav` etc. if split)
+- Names files as `<VIDEO_ID>.mp3` (or `<VIDEO_ID>_chunk_001.mp3` etc. if split)
 
 **Output format:**
 ```
 VIDEO_ID: dQw4w9WgXcQ
 TITLE: Rick Astley - Never Gonna Give You Up
 DURATION: 213
-FILES: transcriptions/dQw4w9WgXcQ.wav
+FILES: transcriptions/dQw4w9WgXcQ.mp3
 STATUS: OK
 ```
 
@@ -112,7 +112,7 @@ Ask for confirmation before proceeding.
 Transcribe the downloaded audio using OpenAI's Whisper API.
 
 ```bash
-python scripts/transcribe_audio.py --input transcriptions/<VIDEO_ID>.wav --output transcriptions/<VIDEO_ID>_transcript.txt
+python scripts/transcribe_audio.py --input transcriptions/<VIDEO_ID>.mp3 --output transcriptions/<VIDEO_ID>_transcript.txt
 ```
 
 The script:
@@ -126,7 +126,7 @@ The script:
 python scripts/transcribe_audio.py --input-dir transcriptions --video-id <VIDEO_ID> --output transcriptions/<VIDEO_ID>_transcript.txt
 ```
 
-This mode auto-discovers all `<VIDEO_ID>_chunk_*.wav` files and transcribes them in order.
+This mode auto-discovers all `<VIDEO_ID>_chunk_*.mp3` files and transcribes them in order.
 
 **Output:**
 ```
@@ -138,7 +138,7 @@ STATUS: OK
 
 After transcription completes, **clean up audio files** to save disk space:
 ```bash
-rm transcriptions/<VIDEO_ID>.wav transcriptions/<VIDEO_ID>_chunk_*.wav 2>/dev/null
+rm transcriptions/<VIDEO_ID>.mp3 transcriptions/<VIDEO_ID>_chunk_*.mp3 2>/dev/null
 ```
 
 ## Phase 4: Summarize Transcription

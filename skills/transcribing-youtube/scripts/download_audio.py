@@ -3,7 +3,7 @@
 Usage:
     python download_audio.py --url "https://youtube.com/watch?v=..." --output-dir transcriptions
 
-Outputs audio as WAV file(s). Splits files >25MB into chunks for Whisper API compatibility.
+Outputs audio as mp3 file(s). Splits files >24MB into chunks for Whisper API compatibility.
 Prints metadata to stdout in KEY: VALUE format.
 """
 
@@ -52,26 +52,6 @@ def get_video_info(url: str) -> dict:
     return json.loads(result.stdout)
 
 
-def download_audio(url: str, output_path: str) -> None:
-    """Download audio and convert to WAV."""
-    result = subprocess.run(
-        [
-            'yt-dlp',
-            '-x',                          # extract audio
-            '--audio-format', 'wav',       # convert to WAV
-            '--audio-quality', '0',        # best quality
-            '-o', output_path,             # output path
-            '--no-playlist',               # single video only
-            '--no-warnings',
-            url,
-        ],
-        capture_output=True, text=True
-    )
-    if result.returncode != 0:
-        print(f"ERROR: Download failed: {result.stderr}", file=sys.stderr)
-        sys.exit(1)
-
-
 def get_file_size_mb(path: str) -> float:
     """Get file size in megabytes."""
     return os.path.getsize(path) / (1024 * 1024)
@@ -102,15 +82,16 @@ def split_audio(input_path: str, output_dir: str, video_id: str, max_size_mb: fl
     chunk_paths = []
     for i in range(num_chunks):
         start = i * chunk_duration
-        chunk_path = os.path.join(output_dir, f"{video_id}_chunk_{i+1:03d}.wav")
+        chunk_path = os.path.join(output_dir, f"{video_id}_chunk_{i+1:03d}.mp3")
         cmd = [
             'ffmpeg', '-y',
             '-i', input_path,
             '-ss', str(start),
             '-t', str(chunk_duration),
-            '-acodec', 'pcm_s16le',
+            '-acodec', 'libmp3lame',
             '-ar', '16000',
             '-ac', '1',
+            '-q:a', '2',
             chunk_path,
         ]
         result = subprocess.run(cmd, capture_output=True, text=True)
@@ -143,16 +124,15 @@ def main():
     title = info.get('title', 'Unknown')
     duration = info.get('duration', 0)
 
-    # Download audio
-    output_path = os.path.join(output_dir, f"{video_id}.wav")
-    # yt-dlp adds extension, so use template without .wav for yt-dlp
+    # Download audio as mp3 (much smaller than WAV, Whisper accepts it)
+    output_path = os.path.join(output_dir, f"{video_id}.mp3")
     output_template = os.path.join(output_dir, f"{video_id}.%(ext)s")
     result = subprocess.run(
         [
             'yt-dlp',
             '-x',
-            '--audio-format', 'wav',
-            '--audio-quality', '0',
+            '--audio-format', 'mp3',
+            '--audio-quality', '2',
             '-o', output_template,
             '--no-playlist',
             '--no-warnings',
@@ -164,21 +144,23 @@ def main():
         print(f"ERROR: Download failed: {result.stderr}", file=sys.stderr)
         sys.exit(1)
 
-    # Check if file needs splitting
-    if os.path.exists(output_path):
-        file_paths = split_audio(output_path, output_dir, video_id)
-    else:
-        # yt-dlp may have used a different extension path
-        # Look for the file
-        candidates = list(Path(output_dir).glob(f"{video_id}.*"))
+    # Find the downloaded file
+    if not os.path.exists(output_path):
+        # yt-dlp may have produced a different extension — look for audio files only
+        audio_exts = {'.mp3', '.m4a', '.wav', '.opus', '.ogg', '.webm'}
+        candidates = [
+            p for p in Path(output_dir).glob(f"{video_id}.*")
+            if p.suffix.lower() in audio_exts
+        ]
         if candidates:
             actual_path = str(candidates[0])
-            if actual_path != output_path:
-                os.rename(actual_path, output_path)
-            file_paths = split_audio(output_path, output_dir, video_id)
+            os.rename(actual_path, output_path)
         else:
             print(f"ERROR: Downloaded file not found in {output_dir}", file=sys.stderr)
             sys.exit(1)
+
+    # Split if needed (Whisper API has 25MB limit)
+    file_paths = split_audio(output_path, output_dir, video_id)
 
     # Report
     print(f"VIDEO_ID: {video_id}")
