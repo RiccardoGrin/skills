@@ -32,9 +32,19 @@ All scripts use only Playwright + Python standard library.
 | Script | Purpose | Quick Example |
 |--------|---------|---------------|
 | `scripts/verify.py` | Pass/fail assertions against a URL | `python verify.py URL --assert "text:Welcome"` |
+| `scripts/interact.py` | Multi-step browser flows (click, fill, assert) | `python interact.py URL --fill "#email=test@test.com" --click "#submit" --assert "text:Welcome"` |
 | `scripts/snapshot.py` | Accessibility tree snapshot (LLM-friendly) | `python snapshot.py URL --wait-for "h1"` |
 | `scripts/screenshot.py` | Screenshot + accessibility tree + console errors | `python screenshot.py URL --wait-for "h1"` |
 | `scripts/with_server.py` | Server lifecycle wrapper | `python with_server.py --cmd "npm start" --port 3000 -- CMD` |
+
+### Common flags (all scripts except with_server.py)
+
+| Flag | Purpose |
+|------|---------|
+| `--viewport WIDTHxHEIGHT` | Set viewport size (e.g., `--viewport 375x812`) |
+| `--device NAME` | Use a Playwright device preset (e.g., `--device "iPhone 14"`) |
+| `--dismiss-dialogs` | Silently dismiss JS dialogs (default: auto-dismiss with stderr warning) |
+| `--timeout MS` | Navigation/action timeout (default: 10000) |
 
 ## Key Concept: `--wait-for` vs `--selector`
 
@@ -50,7 +60,8 @@ Without waiting, screenshots and snapshots capture a blank or partially-rendered
 It is harmless on static sites and essential for SPAs.
 Pick a stable element that only appears after the page renders (e.g., `h1`, `main`, `nav`, `[data-testid=app]`).
 
-`verify.py` does **not** need `--wait-for` — its `text:` and `visible:` assertions already wait up to 5s internally.
+`verify.py` also supports `--wait-for` for cases where you need to wait before running assertions (e.g., SPAs, network-dependent content).
+Its `text:` and `visible:` assertions already wait up to 5s internally, so `--wait-for` is only needed for other wait conditions like `network-idle` or waiting for a specific selector before running non-waiting assertions.
 
 You can combine both flags: `--wait-for "h1" --selector "main"` waits for h1 to appear, then captures only the main element.
 
@@ -88,11 +99,12 @@ python -c "from playwright.sync_api import sync_playwright; print('OK')" 2>/dev/
 | Scenario | Script | When |
 |----------|--------|------|
 | Quick pass/fail check | `verify.py` | VERIFY phases, smoke tests |
+| Multi-step flows (login, forms, navigation) | `interact.py` | Click, fill, assert in sequence |
 | Debugging layout/content | `snapshot.py` | Investigating what the page contains |
 | Visual verification, bug reports | `screenshot.py` | Need to see the page, full diagnostic dump |
-| Multi-step flows (login, forms) | Custom Playwright script | Agent writes directly |
+| Complex/custom flows | Custom Playwright script | When interact.py actions aren't enough |
 
-For loop agent VERIFY phases, `verify.py` is the primary tool — clear pass/fail with details.
+For loop agent VERIFY phases, `verify.py` (single page) or `interact.py` (multi-step) are the primary tools.
 
 ### Phase 4: Write and Run Verification
 
@@ -107,7 +119,7 @@ python with_server.py --cmd "npm start" --port 3000 -- \
     python verify.py http://localhost:3000 --assert "text:Welcome" --assert "no-console-errors"
 ```
 
-**Available assertions:**
+**Available assertions** (used by both `verify.py` and `interact.py`):
 
 | Assertion | Checks |
 |-----------|--------|
@@ -117,14 +129,73 @@ python with_server.py --cmd "npm start" --port 3000 -- \
 | `visible:SELECTOR` | CSS selector matches a visible element (waits up to 5s) |
 | `hidden:SELECTOR` | Element is hidden or absent |
 | `count:SELECTOR:N` | Exactly N elements match selector |
-| `url:PATTERN` | Current URL contains pattern (**checks immediately**, see note below) |
+| `url:PATTERN` | Current URL contains pattern |
 | `no-console-errors` | No console.error() calls during load |
+| `no-console-warnings` | No console.warn() calls during load |
+| `console-contains:TEXT` | Any console message contains text |
+| `request:METHOD:PATH:STATUS` | Network request was made (e.g., `request:GET:/api/users:200`) |
+| `no-failed-requests` | No 4xx/5xx responses in network log |
 | `status:CODE` | HTTP response status code matches |
 
-> **`url:` checks immediately** — it will see the URL at page load time, which is correct for direct navigation.
-> For client-side redirects (SPA routing), use a custom script with `page.wait_for_url("**/path", timeout=10000)`.
+**Wait-for conditions** (verify.py `--wait-for`, interact.py `--wait`):
+
+| Condition | Waits for |
+|-----------|-----------|
+| `SELECTOR` | CSS selector to be visible (bare selector) |
+| `selector:SELECTOR` | CSS selector to be visible (explicit prefix) |
+| `text:TEXT` | Visible text to appear on page |
+| `network-idle` | Network to be idle (no pending requests) |
+
+> **`url:` checks immediately** — correct for direct navigation.
+> For client-side redirects, use `interact.py` with `--wait "text:Dashboard"` before `--assert "url:/dashboard"`.
 
 Read `references/assertion-patterns.md` for framework-specific recipes.
+
+#### interact.py (multi-step flows)
+
+For login flows, form submissions, and multi-page navigation:
+
+```bash
+# Login flow
+python interact.py http://localhost:3000/login \
+    --fill "input[name=email]=test@test.com" \
+    --fill "input[name=password]=password" \
+    --click "button[type=submit]" \
+    --wait "text:Dashboard" \
+    --assert "url:/dashboard" \
+    --assert "text:Welcome"
+
+# Form with screenshot
+python interact.py http://localhost:3000/settings \
+    --fill "#name=New Name" \
+    --select "#role=admin" \
+    --click "button:has-text('Save')" \
+    --wait "text:Saved" \
+    --assert "text:Saved" \
+    --screenshot result.png
+
+# Mobile viewport
+python interact.py http://localhost:3000 \
+    --viewport 375x812 \
+    --click "nav button" \
+    --wait "text:Menu" \
+    --assert "visible:.mobile-menu" \
+    --screenshot mobile.png
+```
+
+**Ordered actions** (executed in the order they appear):
+
+| Action | Purpose |
+|--------|---------|
+| `--click SELECTOR` | Click an element |
+| `--fill "SEL=VALUE"` | Clear and fill an input field |
+| `--select "SEL=VALUE"` | Select a dropdown option |
+| `--type "SEL=VALUE"` | Type text key-by-key (for autocomplete, etc.) |
+| `--wait CONDITION` | Wait for a condition (see wait-for table above) |
+| `--assert ASSERTION` | Check an assertion (see assertions table above) |
+| `--screenshot PATH` | Take screenshot after all actions complete |
+
+Actions fail fast on errors (except assertions, which are collected and reported at the end).
 
 #### snapshot.py (debugging)
 
@@ -132,6 +203,7 @@ Read `references/assertion-patterns.md` for framework-specific recipes.
 # Always include --wait-for to ensure JS has rendered
 python snapshot.py http://localhost:3000 --wait-for "h1"
 python snapshot.py http://localhost:3000 --wait-for "nav" --selector "main"
+python snapshot.py http://localhost:3000 --wait-for "h1" --console
 ```
 
 Returns a YAML-like tree:
@@ -162,6 +234,7 @@ Saves the screenshot and prints the accessibility tree + any console errors to s
 - `--wait-for` waits for the element to appear, then captures the full page (or `--selector` scope).
 - `--selector` scopes both the screenshot and accessibility tree to that element.
 - `--full-page` captures the entire scrollable page (ignored when `--selector` is used).
+- `--console` prints ALL console messages (not just errors) in a `<console-log>` section.
 
 #### Static sites
 
@@ -175,7 +248,7 @@ python snapshot.py http://localhost:8080
 
 #### Custom Playwright Scripts
 
-For complex flows, write a Playwright script directly. Focus on patterns the built-in scripts can't handle:
+For flows that `interact.py` can't handle, write a Playwright script directly. Focus on patterns like:
 
 **Waiting for async state** — assert after dynamic content settles:
 
@@ -186,7 +259,7 @@ assert page.locator("[data-testid=metrics]").count() > 0
 print("PASS: Dashboard loaded with metrics")
 ```
 
-**Testing across navigations** — multi-page flows where state carries over:
+**Testing across navigations** — multi-page flows where state carries over (can also use `interact.py` for simpler cases):
 
 ```python
 page.goto("http://localhost:3000/cart")
@@ -234,7 +307,9 @@ The agent copies the Verify command, runs it, and confirms pass/fail before mark
 |-------|------------|
 | `screenshot.py` / `snapshot.py` without `--wait-for` on SPA apps | Always include `--wait-for` — it's harmless on static sites and essential for SPAs |
 | Screenshots for every verification | Use `verify.py` for pass/fail; screenshots only for visual debugging |
+| Custom Playwright scripts for simple login/form flows | Use `interact.py` — it handles click, fill, wait, assert sequences |
 | Exact text assertions for dynamic content | Use `visible:SELECTOR` for elements, `text:` for stable labels |
 | Full test suites in VERIFY | VERIFY is for quick smoke checks; full suites belong in CI |
 | Hardcoding ports | Read port from project config or use framework defaults |
 | Persistent browser state between runs | Fresh browser per verification is simpler and more correct |
+| `--wait-for "network-idle"` on pages with WebSocket/SSE | Use `--wait-for "text:..."` or `--wait-for "selector:..."` — network-idle hangs on persistent connections |
