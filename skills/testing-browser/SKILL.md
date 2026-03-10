@@ -32,13 +32,31 @@ All scripts use only Playwright + Python standard library.
 | Script | Purpose | Quick Example |
 |--------|---------|---------------|
 | `scripts/verify.py` | Pass/fail assertions against a URL | `python verify.py URL --assert "text:Welcome"` |
-| `scripts/snapshot.py` | Accessibility tree snapshot (LLM-friendly) | `python snapshot.py URL` |
-| `scripts/screenshot.py` | Screenshot + accessibility tree + console errors | `python screenshot.py URL` |
+| `scripts/snapshot.py` | Accessibility tree snapshot (LLM-friendly) | `python snapshot.py URL --wait-for "h1"` |
+| `scripts/screenshot.py` | Screenshot + accessibility tree + console errors | `python screenshot.py URL --wait-for "h1"` |
 | `scripts/with_server.py` | Server lifecycle wrapper | `python with_server.py --cmd "npm start" --port 3000 -- CMD` |
+
+## Key Concept: `--wait-for` vs `--selector`
+
+Most web apps (React, Next.js, Vue, SPA frameworks) render content with client-side JavaScript **after** the initial page load.
+Without waiting, screenshots and snapshots capture a blank or partially-rendered page.
+
+| Flag | Purpose | Affects what is captured? |
+|------|---------|--------------------------|
+| `--wait-for SELECTOR` | Pauses until the element is visible, confirming JS has rendered | **No** — full page is still captured |
+| `--selector SELECTOR` | Scopes both the capture and accessibility tree to this element | **Yes** — only that element is captured |
+
+**Default to including `--wait-for`** with `screenshot.py` and `snapshot.py`.
+It is harmless on static sites and essential for SPAs.
+Pick a stable element that only appears after the page renders (e.g., `h1`, `main`, `nav`, `[data-testid=app]`).
+
+`verify.py` does **not** need `--wait-for` — its `text:` and `visible:` assertions already wait up to 5s internally.
+
+You can combine both flags: `--wait-for "h1" --selector "main"` waits for h1 to appear, then captures only the main element.
 
 ## Workflow
 
-```
+```text
 - [ ] Phase 1: Detect what to test
 - [ ] Phase 2: Ensure Playwright is available
 - [ ] Phase 3: Choose verification approach
@@ -93,23 +111,27 @@ python with_server.py --cmd "npm start" --port 3000 -- \
 
 | Assertion | Checks |
 |-----------|--------|
-| `text:EXPECTED` | Page contains visible text |
+| `text:EXPECTED` | Page contains visible text (waits up to 5s) |
 | `no-text:UNEXPECTED` | Page does NOT contain text |
 | `title:EXPECTED` | Page title contains substring |
-| `visible:SELECTOR` | CSS selector matches a visible element |
+| `visible:SELECTOR` | CSS selector matches a visible element (waits up to 5s) |
 | `hidden:SELECTOR` | Element is hidden or absent |
 | `count:SELECTOR:N` | Exactly N elements match selector |
-| `url:PATTERN` | Current URL contains pattern |
+| `url:PATTERN` | Current URL contains pattern (**checks immediately**, see note below) |
 | `no-console-errors` | No console.error() calls during load |
 | `status:CODE` | HTTP response status code matches |
+
+> **`url:` checks immediately** — it will see the URL at page load time, which is correct for direct navigation.
+> For client-side redirects (SPA routing), use a custom script with `page.wait_for_url("**/path", timeout=10000)`.
 
 Read `references/assertion-patterns.md` for framework-specific recipes.
 
 #### snapshot.py (debugging)
 
 ```bash
-python snapshot.py http://localhost:3000
-python snapshot.py http://localhost:3000 --selector "#main-content"
+# Always include --wait-for to ensure JS has rendered
+python snapshot.py http://localhost:3000 --wait-for "h1"
+python snapshot.py http://localhost:3000 --wait-for "nav" --selector "main"
 ```
 
 Returns a YAML-like tree:
@@ -129,23 +151,27 @@ Returns a YAML-like tree:
 #### screenshot.py (visual + diagnostic)
 
 ```bash
-python screenshot.py http://localhost:3000 --output screenshot.png
-python screenshot.py http://localhost:3000 --full-page --output full.png
-python screenshot.py http://localhost:3000 --selector "#main-content" --output main.png
+# Always include --wait-for to ensure JS has rendered
+python screenshot.py http://localhost:3000 --wait-for "h1" --output screenshot.png
+python screenshot.py http://localhost:3000 --wait-for "h1" --full-page --output full.png
+python screenshot.py http://localhost:3000 --wait-for "h1" --selector "main" --output main.png
 ```
 
 Saves the screenshot and prints the accessibility tree + any console errors to stdout.
-When `--selector` is provided, both the visual screenshot and the accessibility tree are scoped to that element.
 
-#### SPA / Client-Rendered Apps
+- `--wait-for` waits for the element to appear, then captures the full page (or `--selector` scope).
+- `--selector` scopes both the screenshot and accessibility tree to that element.
+- `--full-page` captures the entire scrollable page (ignored when `--selector` is used).
 
-All scripts use `wait_until="load"` which fires after initial HTML and resources load, but potentially before client-side JavaScript finishes rendering or performing redirects.
-For React, Next.js, and other SPA frameworks:
+#### Static sites
 
-- **`text:` and `visible:` assertions in `verify.py` handle this** — they internally wait up to 5s for elements to appear
-- **`url:` assertions check immediately** — they will miss client-side redirects. For redirect testing, use a custom script with `page.wait_for_url("**/path", timeout=10000)`
-- **`screenshot.py` visual captures may be blank** for pages that redirect or render client-side — use `--selector` to wait for a specific element, or use a custom script for redirect pages
-- **`snapshot.py`** captures the accessibility tree at page load. For async content, add a `--selector` that only appears after loading completes, which forces the script to wait
+For sites with no client-side rendering (plain HTML, Hugo, Jekyll), `--wait-for` is harmless but unnecessary.
+You can omit it:
+
+```bash
+python screenshot.py http://localhost:8080 --output static.png
+python snapshot.py http://localhost:8080
+```
 
 #### Custom Playwright Scripts
 
@@ -173,20 +199,23 @@ assert page.locator(".order-number").is_visible()
 print("PASS: Checkout flow completes end-to-end")
 ```
 
-**Canvas/WebGL verification** — checking non-DOM content via pixel sampling:
+**Canvas/WebGL verification** — checking non-DOM content via screenshot size:
 
 ```python
 page.goto("http://localhost:3000/game")
 page.wait_for_timeout(2000)  # let canvas render
-screenshot = page.locator("canvas").screenshot()
-from PIL import Image; import io
-img = Image.open(io.BytesIO(screenshot))
-center = img.getpixel((img.width // 2, img.height // 2))
-assert center != (0, 0, 0, 0), "Canvas is not blank"
+canvas = page.locator("canvas")
+assert canvas.is_visible(), "Canvas should be visible"
+screenshot_bytes = canvas.screenshot()
+assert len(screenshot_bytes) > 1000, "Canvas is blank (screenshot too small)"
 print("PASS: Canvas rendered content")
 ```
 
 See `references/assertion-patterns.md` for login flows and other common patterns.
+
+> **Windows note:** Avoid non-ASCII characters (arrows, emojis) in `print()` statements in custom scripts.
+> Windows consoles may fail with `'charmap' codec can't encode character`.
+> Stick to ASCII or set `PYTHONIOENCODING=utf-8`.
 
 ### Phase 5: Integrate with Loops (Optional)
 
@@ -203,6 +232,7 @@ The agent copies the Verify command, runs it, and confirms pass/fail before mark
 
 | Avoid | Do Instead |
 |-------|------------|
+| `screenshot.py` / `snapshot.py` without `--wait-for` on SPA apps | Always include `--wait-for` — it's harmless on static sites and essential for SPAs |
 | Screenshots for every verification | Use `verify.py` for pass/fail; screenshots only for visual debugging |
 | Exact text assertions for dynamic content | Use `visible:SELECTOR` for elements, `text:` for stable labels |
 | Full test suites in VERIFY | VERIFY is for quick smoke checks; full suites belong in CI |

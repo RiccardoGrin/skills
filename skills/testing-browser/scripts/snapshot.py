@@ -2,13 +2,19 @@
 """Returns an LLM-friendly accessibility tree snapshot of a web page.
 
 Usage:
-    python snapshot.py URL [--selector SELECTOR] [--timeout MS]
+    python snapshot.py URL [--wait-for SELECTOR] [--selector SELECTOR] [--timeout MS]
+
+Options:
+    --wait-for SELECTOR   Wait for this element before capturing (ensures JS has rendered).
+                          The snapshot still covers the full page body.
+    --selector SELECTOR   Scope the snapshot to this element only.
 
 Output: YAML-like indented tree showing roles, names, and properties.
-Structured for LLM consumption — far more token-efficient than raw HTML or screenshots.
+Structured for LLM consumption -- far more token-efficient than raw HTML or screenshots.
 
 Examples:
-    python snapshot.py http://localhost:3000
+    python snapshot.py http://localhost:3000 --wait-for "h1"
+    python snapshot.py http://localhost:3000 --wait-for "h1" --selector "main"
     python snapshot.py http://localhost:3000 --selector "#main-content"
 """
 
@@ -19,6 +25,11 @@ import sys
 def main():
     parser = argparse.ArgumentParser(description="Accessibility tree snapshot")
     parser.add_argument("url", help="URL to snapshot")
+    parser.add_argument(
+        "--wait-for",
+        help="CSS selector to wait for before capturing (ensures client-side JS has rendered). "
+        "Does not affect what is captured -- use --selector to scope the tree.",
+    )
     parser.add_argument("--selector", help="CSS selector to scope the snapshot")
     parser.add_argument(
         "--timeout", type=int, default=10000,
@@ -45,6 +56,18 @@ def main():
             print(f"Could not navigate to {args.url}: {e}", file=sys.stderr)
             browser.close()
             sys.exit(1)
+
+        # Wait for element to confirm JS has rendered (does not scope the capture)
+        if args.wait_for:
+            try:
+                page.locator(args.wait_for).first.wait_for(state="visible", timeout=5000)
+            except Exception:
+                print(
+                    f"--wait-for selector '{args.wait_for}' not found or not visible after 5s",
+                    file=sys.stderr,
+                )
+                browser.close()
+                sys.exit(1)
 
         if args.selector:
             locator = page.locator(args.selector).first

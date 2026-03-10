@@ -5,12 +5,19 @@ Full diagnostic dump: visual screenshot saved to disk, accessibility tree and
 any console errors printed to stdout for the agent to read.
 
 Usage:
-    python screenshot.py URL [--output PATH] [--selector SELECTOR] [--full-page] [--timeout MS]
+    python screenshot.py URL [--output PATH] [--wait-for SELECTOR] [--selector SELECTOR] [--full-page] [--timeout MS]
+
+Options:
+    --wait-for SELECTOR   Wait for this element before capturing (ensures JS has rendered).
+                          Screenshot and accessibility tree still cover the full page.
+    --selector SELECTOR   Scope both the screenshot and accessibility tree to this element.
+    --full-page           Capture the full scrollable page (ignored when --selector is used).
 
 Examples:
-    python screenshot.py http://localhost:3000 --output screenshot.png
-    python screenshot.py http://localhost:3000 --full-page --output full.png
-    python screenshot.py http://localhost:3000 --selector "#main-content"
+    python screenshot.py http://localhost:3000 --wait-for "h1" --output screenshot.png
+    python screenshot.py http://localhost:3000 --wait-for "h1" --full-page --output full.png
+    python screenshot.py http://localhost:3000 --selector "#main-content" --output main.png
+    python screenshot.py http://localhost:3000 --wait-for "h1" --selector "main" --output main.png
 """
 
 import argparse
@@ -21,6 +28,11 @@ def main():
     parser = argparse.ArgumentParser(description="Screenshot + accessibility tree + console errors")
     parser.add_argument("url", help="URL to screenshot")
     parser.add_argument("--output", "-o", default="screenshot.png", help="Output file path")
+    parser.add_argument(
+        "--wait-for",
+        help="CSS selector to wait for before capturing (ensures client-side JS has rendered). "
+        "Does not affect what is captured -- use --selector to scope the capture area.",
+    )
     parser.add_argument("--selector", help="CSS selector to scope screenshot and accessibility tree")
     parser.add_argument("--full-page", action="store_true", help="Capture full scrollable page")
     parser.add_argument(
@@ -55,6 +67,18 @@ def main():
             print(f"Could not navigate to {args.url}: {e}", file=sys.stderr)
             browser.close()
             sys.exit(1)
+
+        # Wait for element to confirm JS has rendered (does not scope the capture)
+        if args.wait_for:
+            try:
+                page.locator(args.wait_for).first.wait_for(state="visible", timeout=5000)
+            except Exception:
+                print(
+                    f"--wait-for selector '{args.wait_for}' not found or not visible after 5s",
+                    file=sys.stderr,
+                )
+                browser.close()
+                sys.exit(1)
 
         # Take screenshot
         if args.selector:

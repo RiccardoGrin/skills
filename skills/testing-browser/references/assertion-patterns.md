@@ -30,7 +30,9 @@ python verify.py http://localhost:3000/about \
     --assert "url:about"
 ```
 
-> **Note:** `url:` checks the URL immediately after page load. This works for direct navigation (the URL is already set by the request) but will miss client-side redirects. For redirect testing, use a custom Playwright script with `page.wait_for_url()`.
+> **Note:** `url:` checks the URL immediately after page load.
+> This works for direct navigation (the URL is already set by the request) but will miss client-side redirects.
+> For redirect testing, use a custom Playwright script with `page.wait_for_url()`.
 
 ### Dynamic content rendered (not stuck loading)
 
@@ -42,13 +44,30 @@ python verify.py http://localhost:3000/dashboard \
 
 ### Cold dev server (slow first compile)
 
-The default navigation timeout is 10s. For Next.js/Vite dev servers that compile on first request, use `--timeout`:
+The default navigation timeout is 10s.
+For Next.js/Vite dev servers that compile on first request, use `--timeout`:
 
 ```bash
 python verify.py http://localhost:3000 \
     --timeout 30000 \
     --assert "text:Welcome" \
     --assert "no-console-errors"
+```
+
+### Visual check with screenshot
+
+```bash
+# --wait-for ensures React has rendered before the screenshot is taken
+python screenshot.py http://localhost:3000 --wait-for "h1" --output homepage.png
+python screenshot.py http://localhost:3000/dashboard --wait-for "[data-testid=dashboard]" --full-page --output dashboard.png
+```
+
+### Accessibility tree inspection
+
+```bash
+# --wait-for ensures React has rendered before the tree is captured
+python snapshot.py http://localhost:3000 --wait-for "h1"
+python snapshot.py http://localhost:3000/dashboard --wait-for "[data-testid=dashboard]" --selector "main"
 ```
 
 ## Static Sites
@@ -59,6 +78,13 @@ python verify.py http://localhost:8080 \
     --assert "title:Home" \
     --assert "visible:header" \
     --assert "visible:footer"
+```
+
+For static sites, `--wait-for` is optional since there's no client-side rendering:
+
+```bash
+python screenshot.py http://localhost:8080 --output static.png
+python snapshot.py http://localhost:8080
 ```
 
 ## Form Validation
@@ -77,7 +103,7 @@ python verify.py http://localhost:3000/signup \
 Use `snapshot.py` to inspect ARIA attributes (invalid, required, disabled):
 
 ```bash
-python snapshot.py http://localhost:3000/signup --selector "form"
+python snapshot.py http://localhost:3000/signup --wait-for "form" --selector "form"
 ```
 
 Output is YAML-like — look for `[required]`, `[invalid]`, `[disabled]` annotations:
