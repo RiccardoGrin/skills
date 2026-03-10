@@ -147,7 +147,9 @@ Read the transcript file and produce a summary. This is done by you (the agent),
 
 **Audience:** Write for a smart, knowledgeable reader. Don't pad with filler or restate the obvious.
 Focus on genuinely valuable insights, novel arguments, and actionable information.
-Omit trivial details, pleasantries, and anything a thoughtful person could infer from context.
+Omit trivial details, pleasantries, sponsor reads, advertisements, and anything a thoughtful person could infer from context.
+If the video references specific tools, websites, repos, or resources that viewers would find useful, mention them.
+For tutorials and how-to content, preserve specific values, thresholds, and step sequences — these are the primary value.
 
 1. Read `transcriptions/<VIDEO_ID>_transcript.txt`
 2. Produce a summary that includes:
