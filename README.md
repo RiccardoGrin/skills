@@ -21,6 +21,7 @@ npx skills add RiccardoGrin/skills
 | `generating-game-changelogs` | Generates player-facing game changelogs from implementation plans and git history |
 | `testing-browser` | Guides browser-based UI verification using Playwright — server lifecycle, accessibility snapshots, screenshots, and assertion-based verification |
 | `creating-sprites` | Guides pixel-art sprite creation via OpenAI gpt-image-1.5 with automated processing |
+| `designing-frontend` | Guides creation of high-quality frontend interfaces using proven design principles for color, typography, spacing, layout, depth, animation, and UX — covers both building and auditing |
 | `transcribing-youtube` | Downloads YouTube audio, transcribes via OpenAI Whisper, and produces cached summaries — handles chunking, caching, and cleanup |
 
 ## Contributing
