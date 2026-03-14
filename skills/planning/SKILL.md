@@ -237,7 +237,7 @@ Keep the plan file updated as implementation proceeds — it becomes the source 
 
 If the user confirmed the plan will be executed via a loop (always ask about loop execution in Phase 1 — phrase it as an option: "Will you implement this via an autonomous loop?"):
 
-1. Write a second file: `IMPLEMENTATION_PLAN.md` in the project root
+1. Write the loop-ready file as `IMPLEMENTATION_PLAN.md` — always use this exact filename. Place it in the project root by default, or in the project's established plan directory (e.g., `docs/plans/IMPLEMENTATION_PLAN.md`) if one exists. Never use a custom or descriptive filename — the loop script searches for this exact name
 2. Convert each change in the plan to a flat task:
    - `- [ ] [Description] — [file path] — [brief approach]`
 3. Preserve phase ordering if the plan uses phased grouping
@@ -264,9 +264,14 @@ Tasks that produce temporary placeholders should be marked `Done (placeholder)` 
 
 Write the completed plan to a markdown file so it survives beyond this session.
 
-- If the platform provides a designated plan location, use it
-- Otherwise, write to the project directory (e.g., `docs/plans/<feature-name>.md`)
+**The plan file MUST always be named `IMPLEMENTATION_PLAN.md`** — never use a custom or descriptive filename (e.g., don't name it `auth-refactor-plan.md`, `feature-roadmap.md`, or `plan.md`). This exact filename is what the loop script and other tooling searches for.
+
+- Place `IMPLEMENTATION_PLAN.md` in the project root by default
+- If the project has an established plan directory (e.g., `docs/plans/`), place it there instead — but the filename must still be exactly `IMPLEMENTATION_PLAN.md`
+- **Format**: The plan MUST use the structured format from the plan templates — with the specific sections (Goal, Changes/Phases, Edge Cases, Validation) and numbered changes with File/Target/Action/Verify fields. Never output a generic prose plan or Claude-style plan mode output. Every plan must have actionable structure, not walls of text
 - The plan must be a standalone document — readable and actionable in a future session without conversation history
+
+If producing both a rich plan and a loop-ready plan (Phase 4b), the rich plan can use a descriptive filename (e.g., `docs/plans/<feature-name>.md`), but `IMPLEMENTATION_PLAN.md` is always the primary deliverable that tooling depends on.
 
 ### Phase 5: Spec Stress-Test
 
