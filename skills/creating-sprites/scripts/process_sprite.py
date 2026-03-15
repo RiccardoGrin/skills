@@ -29,7 +29,7 @@ def color_distance(c1: tuple, c2: tuple) -> float:
     return math.sqrt(sum((a - b) ** 2 for a, b in zip(c1[:3], c2[:3])))
 
 
-def remove_bg(img: Image.Image, chroma_color: tuple, tolerance: int = 30) -> Image.Image:
+def remove_bg(img: Image.Image, chroma_color: tuple, tolerance: int = 45) -> Image.Image:
     """Remove chromakey background color, replacing matched pixels with transparency."""
     img = img.convert("RGBA")
     pixels = img.load()
@@ -78,6 +78,62 @@ def remove_bg(img: Image.Image, chroma_color: tuple, tolerance: int = 30) -> Ima
     return cleaned
 
 
+def detect_chroma_fringe(
+    img: Image.Image, chroma_color: tuple, tolerance: int = 45, threshold_pct: float = 5.0
+) -> tuple[int, float, bool]:
+    """Detect leftover chroma-colored pixels along transparency edges.
+
+    Scans edge-adjacent opaque pixels (alpha > 128) within the fringe cleaning
+    range (tolerance * 1.5) — matching what remove_bg's fringe pass targets.
+    If these pixels survived with high alpha, fringe cleaning didn't catch them.
+
+    Returns (fringe_count, fringe_percentage, has_fringe).
+    fringe_percentage is relative to total edge-adjacent opaque pixels.
+    has_fringe is True if fringe_percentage > threshold_pct.
+    """
+    img = img.convert("RGBA")
+    pixels = img.load()
+    width, height = img.size
+    fringe_tolerance = tolerance * 1.5
+
+    edge_opaque_count = 0
+    fringe_count = 0
+
+    for y in range(height):
+        for x in range(width):
+            r, g, b, a = pixels[x, y]
+            if a == 0:
+                continue
+
+            # Check if any neighbor is transparent
+            has_transparent_neighbor = False
+            for dy in (-1, 0, 1):
+                for dx in (-1, 0, 1):
+                    if dx == 0 and dy == 0:
+                        continue
+                    nx, ny = x + dx, y + dy
+                    if 0 <= nx < width and 0 <= ny < height:
+                        if pixels[nx, ny][3] == 0:
+                            has_transparent_neighbor = True
+                            break
+                if has_transparent_neighbor:
+                    break
+
+            if has_transparent_neighbor:
+                edge_opaque_count += 1
+                # Only flag pixels that are still mostly opaque AND close to chroma
+                if a > 128:
+                    dist = color_distance((r, g, b), chroma_color)
+                    if dist <= fringe_tolerance:
+                        fringe_count += 1
+
+    if edge_opaque_count == 0:
+        return (0, 0.0, False)
+
+    fringe_pct = (fringe_count / edge_opaque_count) * 100
+    return (fringe_count, fringe_pct, fringe_pct > threshold_pct)
+
+
 # ── downscale ──────────────────────────────────────────────────────────────
 
 def downscale(img: Image.Image, target_width: int, target_height: int) -> Image.Image:
@@ -123,16 +179,32 @@ def run_pipeline(
     target_height: int,
     crop_mode: str = "none",
     chroma_color: tuple | None = None,
-    tolerance: int = 30,
+    tolerance: int = 45,
 ) -> None:
     """Run full processing pipeline: remove-bg -> downscale -> crop."""
-    img = Image.open(input_path).convert("RGBA")
+    original = Image.open(input_path).convert("RGBA")
+    img = original.copy()
     print(f"Pipeline: {Path(input_path).name}")
 
     # Step 1: Remove background (if chromakey)
     if chroma_color is not None:
         print(f"  Removing background (chroma: #{chroma_color[0]:02x}{chroma_color[1]:02x}{chroma_color[2]:02x}, tolerance: {tolerance})")
         img = remove_bg(img, chroma_color, tolerance)
+
+        # Step 1b: Check for leftover chroma fringe and auto-retry with higher tolerance
+        fringe_count, fringe_pct, has_fringe = detect_chroma_fringe(img, chroma_color, tolerance)
+        print(f"  Fringe check: {fringe_count} fringe pixels ({fringe_pct:.1f}% of edge pixels) — {'DETECTED' if has_fringe else 'CLEAN'}")
+
+        if has_fringe:
+            retry_tolerance = tolerance + 15
+            print(f"  Retrying background removal with tolerance {retry_tolerance}...")
+            img = remove_bg(original.copy(), chroma_color, retry_tolerance)
+            fringe_count, fringe_pct, has_fringe = detect_chroma_fringe(img, chroma_color, retry_tolerance)
+            print(f"  Fringe re-check: {fringe_count} fringe pixels ({fringe_pct:.1f}% of edge pixels) — {'DETECTED' if has_fringe else 'CLEAN'}")
+            if has_fringe:
+                print("  WARNING: Chroma fringe still detected after retry with increased tolerance.")
+                print("  ACTION: Still use this sprite, but add a task to the implementation plan")
+                print("  for the user to manually clean up remaining background color artifacts.")
 
     # Step 2: Downscale
     img = downscale(img, target_width, target_height)
@@ -167,7 +239,7 @@ def main():
     p_bg.add_argument("--input", required=True)
     p_bg.add_argument("--output", required=True)
     p_bg.add_argument("--chroma-color", default="00FF00", help="Hex color to remove (default: 00FF00)")
-    p_bg.add_argument("--tolerance", type=int, default=30, help="Color distance tolerance (default: 30)")
+    p_bg.add_argument("--tolerance", type=int, default=45, help="Color distance tolerance (default: 45)")
 
     # downscale
     p_ds = subparsers.add_parser("downscale", help="Nearest-neighbor downscale")
@@ -190,7 +262,7 @@ def main():
     p_pipe.add_argument("--target-height", type=int, required=True)
     p_pipe.add_argument("--crop-mode", choices=["bottom-anchor", "center", "none"], default="none")
     p_pipe.add_argument("--chroma-color", default=None, help="Hex color to remove (omit to skip bg removal)")
-    p_pipe.add_argument("--tolerance", type=int, default=30, help="Color distance tolerance (default: 30)")
+    p_pipe.add_argument("--tolerance", type=int, default=45, help="Color distance tolerance (default: 45)")
 
     args = parser.parse_args()
 

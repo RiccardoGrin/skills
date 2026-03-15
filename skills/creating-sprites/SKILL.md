@@ -146,8 +146,9 @@ Outputs: `slime_v1_001.png` through `slime_v1_004.png`.
    - **PASS**: At least 10% transparent pixels, no checkerboard pattern
    - **FAIL**: No alpha channel, 0% transparency, checkerboard detected, or not PNG
 
-2. **Visual inspection** — use the Read tool to view each passing candidate.
-   Check: single sprite? Correct orientation? Right proportions? Matches game style?
+2. **Visual inspection** — use the Read tool to view each passing candidate **alongside the reference images** from Phase 3.
+   Compare against the references — don't judge in isolation. A sprite can look fine on its own but still miss the intended style, proportions, or details from the references.
+   Check: matches references? Single sprite? Correct orientation? Right proportions? Matches game style?
 
 If any candidate passes both checks → skip to **Pick the Best** below.
 
@@ -190,7 +191,7 @@ Validate the same way after each attempt.
 
 After completing your attempts, review **all** candidates from every attempt — not just the latest batch. A sprite from Attempt 1 may be better than one from Attempt 3.
 
-Use the Read tool to compare the top candidates side-by-side and select the single best one for processing.
+Use the Read tool to compare the top candidates side-by-side **and against the original reference images** — select the one that best matches the intended style and details from the references.
 
 ### If All 3 Attempts Fail
 
@@ -208,17 +209,24 @@ python scripts/process_sprite.py pipeline \
   --crop-mode bottom-anchor
 ```
 
-If chromakey was used, add `--chroma-color HEXCODE --tolerance 30`.
+If chromakey was used, add `--chroma-color HEXCODE --tolerance 45`.
 
 Pipeline steps (can also run individually):
 1. **Remove background** (if chromakey): `remove-bg --chroma-color HEXCODE`
 2. **Downscale**: nearest-neighbor from generation size to target dimensions
 3. **Crop** per crop mode: bottom-anchor trims sides/top; center and none leave canvas as-is
 
-**Post-chromakey re-check**: If chromakey was used, run `check_transparency.py` on the output.
-If it fails or the visual check shows artifacts, create a manual task in the implementation plan and skip this sprite.
+**Post-chromakey re-check**: The pipeline automatically detects leftover chroma fringe pixels after background removal. If fringe is detected (>5% of edge pixels match the chroma color), it re-runs removal with tolerance +15 and checks again. Watch the pipeline output for `DETECTED`/`CLEAN`/`WARNING` messages.
 
-Read the final sprite to verify: correct dimensions, clean transparency, pixel-art preserved, appropriate crop.
+After the pipeline completes, run `check_transparency.py` on the output with `--chroma-color HEXCODE` to verify:
+
+```bash
+python scripts/check_transparency.py --input OUTPUT.png --chroma-color HEXCODE
+```
+
+If it fails or the visual check shows artifacts, still use the sprite but add a task to the implementation plan noting the sprite needs manual background cleanup by the user.
+
+Read the final sprite **alongside the reference images** to verify: matches references, correct dimensions, clean transparency, pixel-art preserved, appropriate crop.
 
 ## Phase 7: Save and Update Plan
 
@@ -238,6 +246,7 @@ Read the final sprite to verify: correct dimensions, clean transparency, pixel-a
 | Only visual transparency check | Always run check_transparency.py script first |
 | Green chromakey for plant sprites | Pick a chromakey color not present in the subject |
 | Skipping visual validation | Always Read the image to inspect after programmatic checks |
+| Judging sprites without references | Always compare candidates against the original reference images — never evaluate in isolation |
 | Cropping items | Items stay centered in canvas; only crop entities |
 | Giving up after 1 failed generation | Up to 3 attempts; diagnose failure type and apply the right fix each time |
 | Using chromakey for subject problems | Chromakey fixes backgrounds only; for wrong style/proportions, refine the prompt |
