@@ -115,21 +115,42 @@ Do not duplicate those rules in the project CLAUDE.md unless the user's global c
 
 Create `.claude/settings.json` with PostToolUse hooks matching `Write|Edit`.
 
+**CRITICAL: Hook entries require a `hooks` array.** Each entry in the event array is a matcher object containing a `hooks` array of command objects. Do NOT put `command` directly on the matcher object.
+
+**Correct structure:**
+```json
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "prettier --write \"$CLAUDE_FILE_PATH\" 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
 **Formatter hooks** (auto-fix on every edit):
 
-**If Prettier:** `npx prettier --write $CLAUDE_FILE_PATH 2>/dev/null || true`
-**If Biome:** `npx @biomejs/biome format --write $CLAUDE_FILE_PATH 2>/dev/null || true`
-**If Ruff:** `ruff format $CLAUDE_FILE_PATH 2>/dev/null || true`
-**If Black:** `black $CLAUDE_FILE_PATH 2>/dev/null || true`
+**If Prettier:** `npx prettier --write "$CLAUDE_FILE_PATH" 2>/dev/null || true`
+**If Biome:** `npx @biomejs/biome format --write "$CLAUDE_FILE_PATH" 2>/dev/null || true`
+**If Ruff:** `ruff format "$CLAUDE_FILE_PATH" 2>/dev/null || true`
+**If Black:** `black "$CLAUDE_FILE_PATH" 2>/dev/null || true`
 
 If no formatter is detected, suggest one appropriate for the stack but do not force it. Defaults: Prettier for JS/TS, Ruff for Python, gofmt for Go, rustfmt for Rust.
 
 **Linter hooks** (catch issues mechanically, not via instructions):
 
 If a linter was detected in Phase 1 but no lint hook exists, suggest a PostToolUse lint hook:
-**If ESLint:** `npx eslint --fix $CLAUDE_FILE_PATH 2>/dev/null || true`
-**If Biome:** `npx @biomejs/biome check --fix $CLAUDE_FILE_PATH 2>/dev/null || true`
-**If Ruff:** `ruff check --fix $CLAUDE_FILE_PATH 2>/dev/null || true`
+**If ESLint:** `npx eslint --fix "$CLAUDE_FILE_PATH" 2>/dev/null || true`
+**If Biome:** `npx @biomejs/biome check --fix "$CLAUDE_FILE_PATH" 2>/dev/null || true`
+**If Ruff:** `ruff check --fix "$CLAUDE_FILE_PATH" 2>/dev/null || true`
 
 If no linter is detected and the project has 10+ source files, suggest adding one appropriate for the stack. Don't force it — present it as a recommendation with the benefit (mechanical enforcement catches issues automatically, no agent discipline required).
 
