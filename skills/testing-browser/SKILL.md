@@ -45,6 +45,9 @@ All scripts use only Playwright + Python standard library.
 | `--device NAME` | Use a Playwright device preset (e.g., `--device "iPhone 14"`) |
 | `--dismiss-dialogs` | Silently dismiss JS dialogs (default: auto-dismiss with stderr warning) |
 | `--timeout MS` | Navigation/action timeout (default: 10000) |
+| `--use-chrome` | Launch real Chrome with persistent profile — sessions survive restarts (see below) |
+| `--chrome-port PORT` | Connect to running Chrome via CDP (less reliable than `--use-chrome`) |
+| `--console` | Print detailed console log with timestamps, source locations, and stack traces |
 
 ## Key Concept: `--wait-for` vs `--selector`
 
@@ -64,6 +67,80 @@ Pick a stable element that only appears after the page renders (e.g., `h1`, `mai
 Its `text:` and `visible:` assertions already wait up to 5s internally, so `--wait-for` is only needed for other wait conditions like `network-idle` or waiting for a specific selector before running non-waiting assertions.
 
 You can combine both flags: `--wait-for "h1" --selector "main"` waits for h1 to appear, then captures only the main element.
+
+## Using Real Chrome (`--use-chrome`)
+
+All scripts support `--use-chrome` to launch a real, visible Chrome window instead of headless Chromium.
+Uses a persistent `.browser-data/` profile in the current working directory — sessions (cookies, localStorage) survive across runs.
+
+### How it works
+
+```bash
+# First run: fresh profile, opens visible Chrome
+python verify.py http://localhost:3000 --use-chrome --assert "text:Welcome"
+
+# Subsequent runs: session restored (cookies, login state preserved)
+python verify.py http://localhost:3000 --use-chrome --assert "text:Dashboard"
+```
+
+- The script launches Chrome, navigates to the URL, runs assertions, and closes Chrome
+- Profile data is saved to `.browser-data/` in the current working directory
+- Add `.browser-data/` to your `.gitignore`
+
+### Authenticated pages
+
+On first run, the profile is fresh (not logged in). To establish a session:
+
+```bash
+# Script the login flow — session is saved for future runs
+python interact.py http://localhost:3000/login --use-chrome \
+    --fill "input[name=email]=test@test.com" \
+    --fill "input[name=password]=password" \
+    --click "button[type=submit]" \
+    --wait "text:Dashboard" \
+    --assert "text:Welcome"
+
+# Now all future --use-chrome runs have the session
+python verify.py http://localhost:3000/dashboard --use-chrome --assert "text:Dashboard"
+```
+
+### Limitations
+
+- `--device` is ignored (can't change device emulation on real Chrome)
+- `--viewport` still works
+- Uses a **separate** profile from your daily Chrome — your bookmarks/extensions/accounts are not shared
+- Does not require closing your regular Chrome first
+
+### CDP alternative (`--chrome-port`)
+
+`--chrome-port PORT` connects to an already-running Chrome via CDP. This is less reliable (requires Chrome to be started with `--remote-debugging-port`, background processes often interfere). Prefer `--use-chrome` unless you have a specific reason to use CDP. Both flags fall back to fresh Chromium on failure.
+
+## Enhanced Console Output (`--console`)
+
+All scripts capture console messages and uncaught page errors. The `--console` flag enables detailed output:
+
+```
+<console-log count="5">
+  [0.123s] [log] App initialized @ localhost:3000/main.js:42:10
+  [0.456s] [warn] Deprecated API used @ localhost:3000/api.js:15:3
+  [0.789s] [error] Failed to fetch user data @ localhost:3000/store.js:88:5
+</console-log>
+
+<page-errors count="1">
+  [1.234s] TypeError: Cannot read properties of undefined (reading 'name')
+    at UserProfile (localhost:3000/components/UserProfile.js:23:15)
+    at renderWithHooks (localhost:3000/node_modules/react-dom/...)
+</page-errors>
+```
+
+**Without `--console`**: only console errors and uncaught page errors are shown.
+
+**With `--console`**: all messages (log, warn, error, info, debug) are shown with:
+- **Timestamps** relative to page load (e.g., `[0.123s]`)
+- **Source locations** (file:line:col)
+- **Uncaught exceptions** with full stack traces (always shown, even without `--console`)
+
+Use `--console` when debugging issues -- the timestamps help correlate events and the source locations point directly to problematic code.
 
 ## Workflow
 
@@ -248,43 +325,8 @@ python snapshot.py http://localhost:8080
 
 #### Custom Playwright Scripts
 
-For flows that `interact.py` can't handle, write a Playwright script directly. Focus on patterns like:
-
-**Waiting for async state** — assert after dynamic content settles:
-
-```python
-page.goto("http://localhost:3000/dashboard")
-page.locator(".loading-spinner").wait_for(state="hidden", timeout=10000)
-assert page.locator("[data-testid=metrics]").count() > 0
-print("PASS: Dashboard loaded with metrics")
-```
-
-**Testing across navigations** — multi-page flows where state carries over (can also use `interact.py` for simpler cases):
-
-```python
-page.goto("http://localhost:3000/cart")
-page.click("button:has-text('Checkout')")
-page.wait_for_url("**/checkout")
-page.fill("#address", "123 Main St")
-page.click("button:has-text('Place Order')")
-page.wait_for_url("**/confirmation")
-assert page.locator(".order-number").is_visible()
-print("PASS: Checkout flow completes end-to-end")
-```
-
-**Canvas/WebGL verification** — checking non-DOM content via screenshot size:
-
-```python
-page.goto("http://localhost:3000/game")
-page.wait_for_timeout(2000)  # let canvas render
-canvas = page.locator("canvas")
-assert canvas.is_visible(), "Canvas should be visible"
-screenshot_bytes = canvas.screenshot()
-assert len(screenshot_bytes) > 1000, "Canvas is blank (screenshot too small)"
-print("PASS: Canvas rendered content")
-```
-
-See `references/assertion-patterns.md` for login flows and other common patterns.
+For flows that `interact.py` can't handle, write a Playwright script directly.
+See `references/assertion-patterns.md` for custom script patterns (async state, multi-page navigation, canvas/WebGL).
 
 > **Windows note:** Avoid non-ASCII characters (arrows, emojis) in `print()` statements in custom scripts.
 > Windows consoles may fail with `'charmap' codec can't encode character`.
@@ -311,5 +353,7 @@ The agent copies the Verify command, runs it, and confirms pass/fail before mark
 | Exact text assertions for dynamic content | Use `visible:SELECTOR` for elements, `text:` for stable labels |
 | Full test suites in VERIFY | VERIFY is for quick smoke checks; full suites belong in CI |
 | Hardcoding ports | Read port from project config or use framework defaults |
-| Persistent browser state between runs | Fresh browser per verification is simpler and more correct |
+| Using `--use-chrome` in automated loops | `--use-chrome` is for manual debugging; loops should use fresh headless Chromium for reproducibility |
 | `--wait-for "network-idle"` on pages with WebSocket/SSE | Use `--wait-for "text:..."` or `--wait-for "selector:..."` — network-idle hangs on persistent connections |
+| Retrying `--chrome-port` after repeated failures | If Chrome connection fails 2-3 times, drop `--chrome-port` and use fresh Chromium with `interact.py` for auth flows |
+| Ignoring `<page-errors>` in output | Uncaught exceptions are critical — always investigate stack traces before moving on |

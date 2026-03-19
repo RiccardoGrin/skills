@@ -2,6 +2,7 @@
 
 ## Table of Contents
 
+- [Custom Playwright Scripts](#custom-playwright-scripts)
 - [Next.js / React](#nextjs--react)
 - [Static Sites](#static-sites)
 - [Form Validation](#form-validation)
@@ -12,6 +13,44 @@
 - [Console Inspection](#console-inspection)
 - [Responsive / Mobile](#responsive--mobile)
 - [Multi-server Setups](#multi-server-setups)
+
+## Custom Playwright Scripts
+
+For flows that `interact.py` can't handle, write a Playwright script directly.
+
+**Waiting for async state** — assert after dynamic content settles:
+
+```python
+page.goto("http://localhost:3000/dashboard")
+page.locator(".loading-spinner").wait_for(state="hidden", timeout=10000)
+assert page.locator("[data-testid=metrics]").count() > 0
+print("PASS: Dashboard loaded with metrics")
+```
+
+**Testing across navigations** — multi-page flows where state carries over:
+
+```python
+page.goto("http://localhost:3000/cart")
+page.click("button:has-text('Checkout')")
+page.wait_for_url("**/checkout")
+page.fill("#address", "123 Main St")
+page.click("button:has-text('Place Order')")
+page.wait_for_url("**/confirmation")
+assert page.locator(".order-number").is_visible()
+print("PASS: Checkout flow completes end-to-end")
+```
+
+**Canvas/WebGL verification** — checking non-DOM content via screenshot size:
+
+```python
+page.goto("http://localhost:3000/game")
+page.wait_for_timeout(2000)  # let canvas render
+canvas = page.locator("canvas")
+assert canvas.is_visible(), "Canvas should be visible"
+screenshot_bytes = canvas.screenshot()
+assert len(screenshot_bytes) > 1000, "Canvas is blank (screenshot too small)"
+print("PASS: Canvas rendered content")
+```
 
 ## Next.js / React
 
