@@ -17,6 +17,7 @@ npx skills add RiccardoGrin/skills
 | `planning` | Creates implementation-ready plans through discovery interviews, external research, and codebase analysis |
 | `initializing-projects` | Generates a minimal, self-maintaining CLAUDE.md for projects through auto-detection and developer interview |
 | `looping-tasks` | Generates autonomous loop infrastructure for executing implementation plans across multiple Claude sessions |
+| `planning-loop` | Generates an autonomous game design loop that iteratively expands a game concept into a comprehensive vision and implementation plan |
 | `enforcing-architecture` |  Guides setup of mechanical architecture enforcement — layer detection, dependency rules, check scripts, and hook wiring |
 | `generating-game-changelogs` | Generates player-facing game changelogs from implementation plans and git history |
 | `testing-browser` | Guides browser-based UI verification using Playwright — server lifecycle, accessibility snapshots, screenshots, and assertion-based verification |
