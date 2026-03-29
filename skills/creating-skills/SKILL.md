@@ -47,6 +47,12 @@ If the skill's purpose is catching problems (review, audit, compliance), it shou
 **Don't duplicate existing tools.**
 Before building a skill, check what linters, formatters, and CI tools already handle in the target ecosystem. If ESLint catches unused imports, don't create a skill that also checks for them. Skills should add value beyond what standard tooling provides.
 
+**Design for discoverability.**
+A skill that never gets invoked is worthless.
+The description's "Use when" triggers are necessary but not sufficient — the agent scans them at session start and may not connect them to the right moment.
+Add cross-references in related skills ("Related Skills" section) and in CLAUDE.md for broadly useful skills.
+Ask: "When would someone need this, and what will they be looking at right before they need it?"
+
 ## Choose a Skill Pattern
 
 Before writing anything, identify which pattern fits the task:
