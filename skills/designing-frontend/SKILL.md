@@ -82,9 +82,16 @@ Identify the repeated patterns — most sites use only 2-3 core component types 
 Every product has a personality — discover it before building.
 A financial dashboard feels different from a creative portfolio, which feels different from a developer tool.
 Ask: if this product were a person, how would they dress? How would they speak?
+Ask: **what makes this design unforgettable?** What's the one thing someone will remember after closing the tab?
+
+Commit to a clear aesthetic direction. Some flavors to consider: brutally minimal, maximalist chaos, retro-futuristic, organic/natural, luxury/refined, playful/toy-like, editorial/magazine, brutalist/raw, art deco/geometric, soft/pastel, industrial/utilitarian. These are starting points — the right direction comes from the product's purpose and audience.
 
 Generic AI-generated frontends have tells: perfectly centered layouts, blue-to-purple gradients, identical card grids, rounded-everything, stock illustrations, polished but soulless.
 The antidote is intentional character — expressed through color boldness, type choices, copy tone, spacing rhythm, and interaction style.
+
+**Match implementation complexity to the aesthetic vision.** Maximalist designs need elaborate code with extensive animations, textures, and effects. Minimalist designs need restraint, precision, and careful attention to spacing and typography. Bold maximalism and refined minimalism both work — the key is intentionality, not intensity.
+
+Don't limit character to color and typography. Consider spatial composition (asymmetry, overlap, diagonal flow, grid-breaking elements) and atmospheric details (noise textures, gradient meshes, grain overlays, layered transparencies, custom cursors). These are tools, not requirements — use them when they serve the vision.
 
 Before building, identify at least one distinguishing trait: a bold color, an unusual type pairing, a distinctive interaction pattern, a specific tone of voice, or a deliberate layout choice that makes this product feel like *this* product and not a template.
 Load `references/ux-and-components.md` for detailed guidance on design personality.
