@@ -259,6 +259,12 @@ Adjust the generated `loop.sh`:
    - **Resume after interrupt**: `./loop.sh 10 <session-id>` (the session ID is printed when you Ctrl+C mid-iteration)
 4. Recommend: run with `1` first, review the result, then scale up.
 
+## Related Skills
+
+- Consider activating `/being-careful` before starting an autonomous loop to block accidental destructive commands (rm -rf, force-push, DROP TABLE, etc.)
+- If the loop should only touch files in a specific area, use `/freezing-edits <dir>` to prevent edits elsewhere
+- After the loop completes, run `/reviewing-code` to do a final adversarial review before pushing
+
 ## Anti-Patterns
 
 | Avoid | Do Instead |

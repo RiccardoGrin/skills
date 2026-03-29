@@ -24,6 +24,9 @@ npx skills add RiccardoGrin/skills
 | `creating-sprites` | Guides pixel-art sprite creation via OpenAI gpt-image-1.5 with automated processing |
 | `designing-frontend` | Guides creation of high-quality frontend interfaces using proven design principles for color, typography, spacing, layout, depth, animation, and UX — covers both building and auditing |
 | `transcribing-youtube` | Downloads YouTube audio, transcribes via OpenAI Whisper, and produces cached summaries — handles chunking, caching, and cleanup |
+| `being-careful` | Activates session-scoped safety hooks that block dangerous shell commands (rm -rf, DROP TABLE, force-push, hard reset, kubectl delete) |
+| `freezing-edits` | Blocks all file writes and edits outside a specified directory for the rest of the session |
+| `reviewing-code` | Adversarial review loop — spawns independent reviewer and fixer subagents, iterating until only nitpicks remain |
 
 ## Contributing
 
