@@ -65,6 +65,33 @@ Detailed content goes in separate files in a `vision/` directory, linked from VI
 - **Milestone 3+**: Additional systems layered on one at a time
 - **MVP**: The first milestone where a player would choose to keep playing
 
+## Systems Interactions
+
+{How game systems connect and affect each other. Added during Deepen phase, validated during Critique. This section prevents systems from being designed in isolation.}
+
+### Resource Flows
+{For each resource: sources, drains, steady-state math, disruption survival. Show the numbers.}
+
+### Spatial Rules
+{Movement granularity, collision rules, interaction ranges, priority when systems conflict.}
+
+### Known Conflicts & Resolutions
+| Conflict | Systems Involved | Resolution | Iteration |
+|----------|-----------------|------------|-----------|
+
+## Player Experience
+
+{How the player interacts with and understands the game. Added during Critique phase.}
+
+### First 5 Minutes
+{Step-by-step walkthrough of a new player's first experience.}
+
+### Controls Reference
+{Every player interaction and how the player learns it exists.}
+
+### UI Requirements
+{Menus, HUD, repositioning, accessibility. Checklist of required elements.}
+
 ## Open Questions
 
 - What is the core game loop — the 30-second action the player repeats?
@@ -104,6 +131,8 @@ Detailed content goes in separate files in a `vision/` directory, linked from VI
 - **Feature Map**: Grows during Expansion. Status changes during Critique and Refinement. Keep summary-level in VISION.md.
 - **Detail Files**: When deep-diving a game system or doing research, write to the appropriate vision/ file, not directly into VISION.md.
 - **Scope & Milestones**: Added during Refine. Playable vertical slices ordered fastest-to-playable.
+- **Systems Interactions**: Added during Deepen. Every time a system is deepened, its connections to other systems must be documented here with concrete numbers and timing. Updated whenever the Systems Integration Analyst finds conflicts.
+- **Player Experience**: Added during Critique. Every Critique iteration must validate the first-5-minutes walkthrough and controls reference. Updated whenever the Player Experience Designer finds gaps.
 - **Open Questions**: Add liberally. Resolve by moving answers to appropriate sections or detail files.
 - **Decision Log**: Record every significant design decision with reasoning and iteration number.
 - **Cutting Room Floor**: Always explain why a mechanic was cut. Never silently remove features.
