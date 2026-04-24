@@ -24,6 +24,7 @@ node_modules/
 __pycache__/
 *.pyc
 loop.sh
+!skills/*/scripts/loop.sh
 /.claude
 IMPLEMENTATION_PLAN.md
 /transcriptions

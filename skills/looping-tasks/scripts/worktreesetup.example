@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# One-time setup for new worktrees — runs once when a worktree is first created.
+# Use it to install dependencies, generate local config, etc.
+# Called automatically by loop-worktrees.sh after worktree creation and file copying.
+#
+# Rename to `.worktreesetup` (dotfile) in the repo root to enable.
+# Customize the install commands below for your stack.
+
+set -euo pipefail
+
+# Example: pnpm workspace under ./next/
+if [ -f "next/pnpm-lock.yaml" ]; then
+  echo "Installing dependencies (pnpm)..."
+  cd next && pnpm install --frozen-lockfile
+fi
+
+# Example: plain npm project
+# if [ -f "package-lock.json" ]; then
+#   npm ci
+# fi
+
+# Example: Python project with uv
+# if [ -f "pyproject.toml" ]; then
+#   uv sync
+# fi

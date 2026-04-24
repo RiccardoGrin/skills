@@ -1,0 +1,7 @@
+# Files to copy into new worktrees (only gitignored files are copied).
+# Uses glob patterns, one per line.
+#
+# Rename to `.worktreeinclude` (dotfile) in the repo root to enable.
+
+.env
+.env.*
