@@ -11,7 +11,7 @@ Fresh context per iteration is the key design principle — avoids context windo
 
 Every N worker iterations (default 5) and once at the very end, the loop runs an **audit iteration** instead of a worker iteration.
 The auditor spawns parallel subagents to review recently completed work against the plan and codebase, triages the findings, and injects follow-ups into the plan as new `[ ]` tasks.
-It never fixes code itself — the next worker iteration picks the audit tasks up normally.
+It never fixes code itself — the next worker iteration picks the audit tasks up normally — with one exception: the auditor verifies the project builds and fixes build breakage inline, since a broken build would block its own commit.
 
 The user creates the plan (via the planning skill or manually).
 The loop only implements — but the agent can update the plan when it discovers new work, bugs, or needed refactoring.
@@ -77,6 +77,8 @@ Smaller plans (< 15 tasks) may warrant lowering it so audits still fire before t
 **Audit checklist.** The auditor prompt inside `loop.sh` lists five categories to check: gaps vs plan, pattern match, security, comments, and tests.
 The security line is intentionally generic ("violations of rules stated in CLAUDE.md").
 If the target repo's `CLAUDE.md` has specific rules worth naming explicitly (authz scoping, rate-limit tiers, webhook signature verification, etc.), edit that line to name them — a concrete auditor finds more.
+
+**Build verification at audit time.** The audit prompt instructs the auditor to run the project's build command before committing. The auditor figures out the right command from CLAUDE.md / AGENTS.md / the package manifest — generic across stacks. This lets per-commit hooks skip the (often slow) full build and run only fast checks (unit tests + typecheck), with audit serving as the periodic full-build gate. If the project has no meaningful build step, the auditor skips this.
 
 **Restricted tools.** By default the script uses `--dangerously-skip-permissions`.
 If the user wants restricted tool access, replace it with `--allowedTools` and a whitelist tailored to the detected stack (e.g., `"Read,Glob,Grep,Edit,Write,Bash(git *),Bash(pnpm *),Bash(npx *),Task"`).

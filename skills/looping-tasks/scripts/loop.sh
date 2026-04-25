@@ -102,6 +102,8 @@ If zero issues are worth fixing, add a one-line `## Audit Pass — after §N —
 
 If you added any new tasks and `ALL_TASKS_COMPLETE` is the first line of the plan, remove it.
 
+VERIFY the project builds before committing — run the project's build command (check CLAUDE.md / AGENTS.md or the package manifest for the right command). Fix any failures yourself; build breakage is the one exception to "auditor doesn't fix code." Skip if the project has no build step.
+
 COMMIT with a message starting with `audit:` and a short WHY-focused summary. Push.
 AUDIT
       ;;
