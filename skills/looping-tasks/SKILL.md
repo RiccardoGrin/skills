@@ -25,6 +25,7 @@ The templates are designed to be project-agnostic — most projects need zero ch
 |----------|---------|
 | `scripts/loop.sh` | The loop driver. Implements mode selection (worker/audit/resume), retry-on-error, final-audit gating, and changelog generation. |
 | `scripts/prompt.txt` | The worker prompt — one iteration picks a task, implements, tests, commits, updates the plan, stops. |
+| `scripts/watchdog.sh` | Background process the loop launches at startup. Kills the active claude session if its transcript JSONL stops growing for 20 min, so the loop's retry path can spawn a fresh session. See "Idle Watchdog" below. |
 | `scripts/loop-worktrees.sh` | **Optional.** Thin wrapper that runs the same loop inside a git worktree on its own branch. Delegates all iteration logic to `loop.sh` — zero duplication. See the "Worktree Mode" section below. |
 | `scripts/worktreeinclude.example` | Optional template for `.worktreeinclude` — globs of gitignored files to copy into new worktrees (`.env` etc.). |
 | `scripts/worktreesetup.example` | Optional template for `.worktreesetup` — shell script that runs once in a new worktree to install deps. |
@@ -53,9 +54,10 @@ The audit prompt and changelog prompt are inline heredocs inside `loop.sh` — t
 1. Create `loop/` at the repo root.
 2. Copy `<skill-dir>/scripts/loop.sh` → `loop/loop.sh`.
 3. Copy `<skill-dir>/scripts/prompt.txt` → `loop/prompt.txt`.
-4. Ensure `loop/` is gitignored — append `loop/` to `.gitignore` if it isn't already.
-   The loop directory holds runtime artifacts (`handoff.md`, `.final_audit_done`) and a personal-to-the-user prompt, so it should not be checked in.
-5. On macOS/Linux, `chmod +x loop/loop.sh`.
+4. Copy `<skill-dir>/scripts/watchdog.sh` → `loop/watchdog.sh`. The loop auto-detects it at startup; absent watchdog just disables the idle timeout.
+5. Ensure `loop/` is gitignored — append `loop/` to `.gitignore` if it isn't already.
+   The loop directory holds runtime artifacts (`handoff.md`, `.final_audit_done`, `.current_session`) and a personal-to-the-user prompt, so it should not be checked in.
+6. On macOS/Linux, `chmod +x loop/loop.sh loop/watchdog.sh`.
 
 All `scripts/` paths are **relative to the skill directory** — resolve to absolute paths before copying.
 
@@ -126,6 +128,24 @@ Understanding the audit behavior helps diagnose surprises.
 - The final-audit pass runs exactly **once**.
   After it runs with `ALL_TASKS_COMPLETE` still present, the script creates `loop/.final_audit_done` and goes straight to the changelog on the next loop pass — this prevents an infinite audit → fix → audit cycle.
 - The flag file is cleared at script start so reruns of the whole loop get a fresh final audit.
+
+## Idle Watchdog
+
+A claude session can wedge mid-iteration in ways that don't return an error — most commonly a Bash polling loop with an `until` predicate that never matches (e.g., `until grep -qE "loaded|error|^[A-Za-z]" ...; do sleep 2; done` against output that starts with a non-ASCII character). The session burns CPU forever, never exits, and the loop never advances.
+
+`watchdog.sh` covers this. At startup, `loop.sh` spawns it in the background and reaps it via an `EXIT` trap. Before each `claude` invocation, the loop writes the claude PID and session ID to `loop/.current_session`; the watchdog reads that file every 60s, finds the session's transcript at `~/.claude/projects/<encoded-cwd>/<session-id>.jsonl`, and if the transcript hasn't been touched for `IDLE_TIMEOUT` seconds (default 1200 = 20 min), kills the claude process tree. The loop's existing retry-on-error path then spawns a fresh session on the same iteration.
+
+**Tunables** (env vars, set on the same line as `bash loop/loop.sh`):
+
+- `IDLE_TIMEOUT=1800` — seconds of transcript silence before kill. Default 1200. Drop to 600 for very interactive plans, raise to 1800–2400 if iterations frequently include long single LLM turns.
+- `POLL_INTERVAL=30` — how often the watchdog checks. Default 60. Rarely worth changing.
+
+**Behavior notes:**
+
+- Tree kill is mandatory, not a defense-in-depth nicety. Killing the claude PID alone leaves descendant Bash subprocesses alive on Windows (observed: a stuck `until grep ...; do sleep 2; done` survived its parent claude's death). The watchdog uses `taskkill /T /F /PID` on Windows and `pkill -P` + `kill` on Unix.
+- Deterministic hangs burn the retry. If the worker keeps tripping the same trap, watchdog kills first → 60s wait → fresh session hits the same trap → watchdog kills again → loop exits 1. That's the intended behavior — repeated identical hangs are a bug, not a flake.
+- Between iterations the sentinel is cleared, so the watchdog idles silently during the 10s pause and the 60s retry sleep.
+- If `watchdog.sh` is absent (e.g., the user only copied `loop.sh`), `start_watchdog` no-ops. Loop runs exactly as before, just without the safety net.
 
 ## Worktree Mode (Optional)
 
