@@ -98,13 +98,13 @@ TRIAGE findings. Drop nits, stylistic preferences, and false positives. For each
 - Belongs inside an existing section → insert a new `[ ]` subtask right after the related completed task, labelled `N.a`, `N.b`, …
 - Cross-cutting or standalone → append a `## Audit Pass — after §N` block immediately before the next unchecked section (or at the end of the plan if this is the final audit). Each finding is a `[ ]` task with a crisp description and file/line pointers.
 
-If zero issues are worth fixing, add a one-line `## Audit Pass — after §N — clean` note and do nothing else.
-
 If you added any new tasks and `ALL_TASKS_COMPLETE` is the first line of the plan, remove it.
 
-VERIFY the project builds before committing — run the project's build command (check CLAUDE.md / AGENTS.md or the package manifest for the right command). Fix any failures yourself; build breakage is the one exception to "auditor doesn't fix code." Skip if the project has no build step.
+If the audit found nothing worth fixing and you added no tasks, exit immediately — do not edit the plan, do not commit, do not leave a marker. Empty audits should produce no git history; the absence of recent `audit:` commits is itself the signal that intervening work was reviewed and clean.
 
-COMMIT with a message starting with `audit:` and a short WHY-focused summary. Push.
+If you added one or more new tasks, VERIFY the project builds before committing — run the project's build command (check CLAUDE.md / AGENTS.md or the package manifest for the right command). Fix any failures yourself; build breakage is the one exception to "auditor doesn't fix code." Skip if the project has no build step.
+
+Then COMMIT with a message starting with `audit:` and a short WHY-focused summary, and push.
 AUDIT
       ;;
     worker)
