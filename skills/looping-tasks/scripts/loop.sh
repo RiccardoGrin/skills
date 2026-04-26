@@ -190,6 +190,23 @@ while [ $i -lt $MAX ]; do
   echo ""
   echo "=== Iteration $((i + 1))/$MAX ==="
 
+  # Pause sentinel — written by the worker when a task needs manual user action.
+  # Format: `LOOP_PAUSED` first line of the plan, then a `## Paused — Manual Work
+  # Needed` block describing what the user must do. Loop exits cleanly so the
+  # user can do the work, remove the sentinel + block, and rerun the loop.
+  if grep -q "^LOOP_PAUSED" "$PLAN" 2>/dev/null; then
+    echo ""
+    echo "=== Loop PAUSED — manual work needed ==="
+    awk '
+      /^LOOP_PAUSED/ { in_pause=1; next }
+      in_pause && /^## / && !/Paused/ { exit }
+      in_pause { print }
+    ' "$PLAN"
+    echo ""
+    echo "When done: complete the work, remove the LOOP_PAUSED line + Paused section from $PLAN, then rerun: bash loop/loop.sh $MAX"
+    exit 0
+  fi
+
   # --- Decide mode: resume, audit, or worker ---
   MODE="worker"
   if [ -n "$RESUME_ID" ] && [ $i -eq 0 ]; then
