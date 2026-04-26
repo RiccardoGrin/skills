@@ -147,7 +147,11 @@ SPAWN parallel Agent subagents to check that scope for:
 4. Comments — missing WHY comments on non-obvious logic or business rules
 5. Tests — missing coverage for shipped behavior
 
-TRIAGE findings. Drop nits, stylistic preferences, and false positives. For each surviving finding decide placement in the plan:
+TRIAGE findings. Drop nits, stylistic preferences, and false positives.
+
+STRESS-TEST the survivors. Spawn one Agent subagent with the list; have it re-read the cited code and cross-check against CLAUDE.md, AGENTS.md, `docs/`, the plan's preamble, and the relevant third-party API/library docs (web-fetch as needed) for any external tool involved in the finding. For each one, confirm: real (not a misread), worth fixing (not working as intended), aligned with project conventions and the feature's direction, and the proposed fix follows best practices. Drop what it rejects.
+
+PLACE each remaining finding in the plan:
 - Belongs inside an existing section → insert a new `[ ]` subtask right after the related completed task, labelled `N.a`, `N.b`, …
 - Cross-cutting or standalone → append a `## Audit Pass — after §N` block immediately before the next unchecked section (or at the end of the plan if this is the final audit). Each finding is a `[ ]` task with a crisp description and file/line pointers.
 
