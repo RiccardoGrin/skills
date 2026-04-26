@@ -37,6 +37,10 @@ PROMPT_FILE="$SCRIPT_DIR/prompt.txt"
 FINAL_AUDIT_FLAG="$SCRIPT_DIR/.final_audit_done"
 SENTINEL="$SCRIPT_DIR/.current_session"
 WATCHDOG_SCRIPT="$SCRIPT_DIR/watchdog.sh"
+# Touched by the watchdog after a kill so the retry banner can label the cause
+# as a watchdog timeout instead of a generic non-zero claude exit. Loop deletes
+# it as soon as it's read.
+WATCHDOG_KILL_FLAG="$SCRIPT_DIR/.watchdog_killed"
 WATCHDOG_PID=""
 i=0
 SINCE_AUDIT=0
@@ -45,6 +49,9 @@ SINCE_AUDIT=0
 rm -f "$FINAL_AUDIT_FLAG"
 # Clear stale watchdog sentinel so the watchdog doesn't act on a corpse from a prior run.
 : > "$SENTINEL"
+# Drop any stale watchdog-kill marker from a prior run so the first iteration
+# isn't mislabelled "watchdog killed" if claude happens to exit non-zero.
+rm -f "$WATCHDOG_KILL_FLAG"
 
 # --- Watchdog lifecycle ---
 # The watchdog kills the active claude process tree if its transcript JSONL
@@ -99,9 +106,21 @@ gen_uuid() {
 # Backgrounds claude so we can capture its PID, write the watchdog sentinel,
 # then wait for completion. The wait's exit code is the function's return code.
 write_sentinel() {
-  local sid
+  local sid winpid
   if [ "$MODE" = "resume" ]; then sid="$RESUME_ID"; else sid="$LAST_SESSION_ID"; fi
-  echo "$CLAUDE_PID $sid" > "$SENTINEL"
+  # On Git Bash/Windows, $! is an MSYS PID — a Bash-internal fiction the OS
+  # doesn't recognize. taskkill needs the real Windows PID; ps -o winpid=
+  # prints it. On real Unix, ps has no winpid column → empty → the watchdog
+  # falls back to the standard kill path on the MSYS PID (which IS the OS PID
+  # on Unix), so the placeholder "0" is harmless there.
+  winpid=$(ps -p "$CLAUDE_PID" -o winpid= 2>/dev/null | tr -d '[:space:]')
+  # Defensive: -o winpid= should suppress the header and yield a digits-only
+  # value, but if ps misbehaves (header leak, blank, or non-numeric noise)
+  # we'd be handing garbage to taskkill. Force "0" on anything non-numeric so
+  # the watchdog cleanly skips taskkill instead of killing a recycled or
+  # nonsensical PID.
+  [[ "$winpid" =~ ^[0-9]+$ ]] || winpid="0"
+  echo "$CLAUDE_PID $winpid $sid" > "$SENTINEL"
 }
 run_iteration() {
   CLAUDE_PID=""
@@ -204,18 +223,31 @@ while [ $i -lt $MAX ]; do
 
   # One retry on error (re-runs the same MODE)
   if [ "$CLAUDE_EXIT" -ne 0 ]; then
-    echo "Claude exited with code $CLAUDE_EXIT — retrying in 60s (Ctrl+C to stop)..."
+    # Distinguish watchdog kill from a genuine claude crash so the operator can
+    # tell at a glance whether to investigate or just let the retry happen.
+    if [ -f "$WATCHDOG_KILL_FLAG" ]; then
+      RETRY_REASON="watchdog killed iteration (transcript idle ≥ ${IDLE_TIMEOUT:-1200}s)"
+      rm -f "$WATCHDOG_KILL_FLAG"
+    else
+      RETRY_REASON="claude exited with code $CLAUDE_EXIT"
+    fi
+    echo ""
+    echo "=== Iteration $((i + 1)) interrupted — $RETRY_REASON ==="
+    echo "=== Sleeping 60s before retry (Ctrl+C to stop) ==="
     sleep 60
     CLAUDE_EXIT=0
     LAST_SESSION_ID=$(gen_uuid)
     SESSION_FLAG=""
     [ -n "$LAST_SESSION_ID" ] && SESSION_FLAG="--session-id $LAST_SESSION_ID"
+    # Print right before the new claude spawns so the user sees fresh activity
+    # the moment the 60s sleep ends, instead of staring at a quiet terminal.
+    echo "=== Retry starting (iteration $((i + 1))/$MAX, session ${LAST_SESSION_ID:-unset}) ==="
     IN_SESSION=true
     run_iteration || CLAUDE_EXIT=$?
     IN_SESSION=false
     : > "$SENTINEL"
     if [ "$CLAUDE_EXIT" -ne 0 ]; then
-      echo "Retry failed (exit code $CLAUDE_EXIT) — stopping loop"
+      echo "=== Retry failed (exit code $CLAUDE_EXIT) — stopping loop ==="
       exit 1
     fi
   fi
