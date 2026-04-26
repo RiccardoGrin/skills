@@ -289,10 +289,8 @@ while [ $i -lt $MAX ]; do
 
   if [ $i -lt $MAX ]; then
     echo ""
-    echo "=== Iteration $i complete. Pausing 10s before next iteration ==="
-    echo "=== Press Ctrl+C now to safely stop the loop ==="
+    echo "=== Pausing 10s before next iteration — press Ctrl+C now to safely stop the loop ==="
     sleep 10
-    echo "=== Starting iteration $((i + 1))/$MAX ==="
   fi
 done
 
