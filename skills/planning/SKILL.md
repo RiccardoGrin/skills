@@ -244,11 +244,10 @@ If the user confirmed the plan will be executed via a loop (always ask about loo
 4. Each task must be completable in one loop iteration — split large changes if needed
 5. Add a Goal section from the plan
 6. Add empty Decision Log and Issues Found sections
-7. Add a reference to the full plan: "See `docs/plans/<feature>.md` for full context"
+7. Fold every bit of context a task needs directly into that task's line (and the `## Notes` section). There is no separate plan document to point at — `IMPLEMENTATION_PLAN.md` must be fully self-contained
 8. Note: the loop script detects completion by checking for `ALL_TASKS_COMPLETE` at the start of the file. Include a comment at the top of the generated plan: `<!-- When all tasks are done, the loop agent prepends ALL_TASKS_COMPLETE above this line -->`
 
-The rich plan stays as documentation.
-The `IMPLEMENTATION_PLAN.md` is the executable task list for the loop.
+There is only ever **one** plan file: `IMPLEMENTATION_PLAN.md`. It holds both the context and the executable task list. Never split the rich context into a second document (e.g. `docs/plans/<feature>.md`) and have the task list reference it — that produces two plan files, which is exactly what to avoid.
 
 **Agent capabilities**: Do not assume art or asset tasks are human-only. Agents may have skills for sprite creation, image generation, or other asset work. Plan these as normal tasks — the implementing agent will check its available skills and attempt them. Only mark a task as requiring human input when it genuinely cannot be automated (e.g., subjective creative direction, licensing decisions).
 
@@ -262,16 +261,18 @@ Tasks that produce temporary placeholders should be marked `Done (placeholder)` 
 
 #### Persist the Plan
 
-Write the completed plan to a markdown file so it survives beyond this session.
+Write the completed plan to a single markdown file so it survives beyond this session.
 
-**The plan file MUST always be named `IMPLEMENTATION_PLAN.md`** — never use a custom or descriptive filename (e.g., don't name it `auth-refactor-plan.md`, `feature-roadmap.md`, or `plan.md`). This exact filename is what the loop script and other tooling searches for.
+**Produce exactly one plan file, always named `IMPLEMENTATION_PLAN.md`.** Never create a second plan document — no `docs/plans/<feature>.md`, no companion "full context" file, no descriptive filename like `auth-refactor-plan.md` or `feature-roadmap.md`. All context, structure, and tasks live in the one `IMPLEMENTATION_PLAN.md`. This exact filename is what the loop script and other tooling searches for, and keeping everything in one file is what keeps the plan clear.
 
 - Place `IMPLEMENTATION_PLAN.md` in the project root by default
-- If the project has an established plan directory (e.g., `docs/plans/`), place it there instead — but the filename must still be exactly `IMPLEMENTATION_PLAN.md`
+- If the project has an established plan directory (e.g., `docs/plans/`), place it there instead — but the filename must still be exactly `IMPLEMENTATION_PLAN.md`, and it remains the only plan file
 - **Format**: The plan MUST use the structured format from the plan templates — with the specific sections (Goal, Changes/Phases, Edge Cases, Validation) and numbered changes with File/Target/Action/Verify fields. Never output a generic prose plan or Claude-style plan mode output. Every plan must have actionable structure, not walls of text
-- The plan must be a standalone document — readable and actionable in a future session without conversation history
+- The plan must be a standalone document — readable and actionable in a future session without conversation history. Since it is the only plan file, it cannot defer detail to anything else
 
-If producing both a rich plan and a loop-ready plan (Phase 4b), the rich plan can use a descriptive filename (e.g., `docs/plans/<feature-name>.md`), but `IMPLEMENTATION_PLAN.md` is always the primary deliverable that tooling depends on.
+**This file is temporary.** Once the work is fully implemented and audited, the user deletes `IMPLEMENTATION_PLAN.md`. So nothing in it is a long-term record. Any decision, constraint, rationale, or "why" that must outlive implementation has to be captured where it persists — concise but clear **code comments** and **front matter** at the point it's relevant — not left only in the plan. When writing the plan, flag durable knowledge (non-obvious rationale, business logic, gotchas, invariants) so the implementing agent knows to encode it in the code itself before the plan is discarded.
+
+**If an `IMPLEMENTATION_PLAN.md` already exists, do not overwrite or append to it without checking.** Read it first. If it is already complete (all tasks done / superseded), it's safe to replace. But if it contains an **unfinished** plan — open tasks, partial progress — stop and ask the user how to proceed. Offer to write the new plan to a separate, distinctly-named file instead, e.g. `[CUSTOM_NAME]_IMPLEMENTATION_PLAN.md` (with a descriptive `CUSTOM_NAME`), so the in-progress plan is preserved. Note that loop tooling searches for the exact name `IMPLEMENTATION_PLAN.md`, so a custom-named file won't be picked up by the loop until renamed — surface this tradeoff when offering the option.
 
 ### Phase 5: Spec Stress-Test
 

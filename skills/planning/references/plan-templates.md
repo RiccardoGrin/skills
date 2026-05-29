@@ -170,7 +170,7 @@ Add threaded comments to documents so collaborators can discuss specific text se
 
 ## Loop-Compatible Output Example
 
-When a plan is destined for autonomous loop execution, Phase 4b produces a flat `IMPLEMENTATION_PLAN.md` alongside the rich plan.
+When a plan is destined for autonomous loop execution, Phase 4b produces a flat `IMPLEMENTATION_PLAN.md` — the single, self-contained plan file (no separate rich-plan document).
 Given the phased plan above (comment threads), the loop-ready output would be:
 
 ```
@@ -180,7 +180,7 @@ Given the phased plan above (comment threads), the loop-ready output would be:
 ## Goal
 Add threaded comments to documents so collaborators can discuss specific text selections inline.
 
-See `docs/plans/comment-threads.md` for full context.
+<!-- This file is the only plan document and is deleted after implementation + audit. Encode any durable rationale (e.g. "decorations not marks — survive edits") in code comments/front matter, not just here. -->
 
 ## Tasks
 - [ ] Add Comment model to database — `prisma/schema.prisma` — new model with anchor positions, threading via parentId
@@ -212,7 +212,7 @@ Given the flat list example above (keyboard shortcuts), the loop-ready output wo
 ## Goal
 Add keyboard shortcuts for common task actions so power users can manage tasks without touching the mouse.
 
-See `docs/plans/keyboard-shortcuts.md` for full context.
+<!-- This file is the only plan document and is deleted after implementation + audit. Encode any durable rationale (e.g. WCAG 2.1.4 requires shortcuts be disablable) in code comments, not just here. -->
 
 ## Tasks
 - [ ] Add keyboard event listener to task list — `src/components/TaskList.tsx` — useEffect with keydown listener on container, active only when no text input focused
