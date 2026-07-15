@@ -36,6 +36,12 @@ Collect all inputs before synthesizing anything.
    Use `git log --oneline` to get a quick summary; dig into individual commits when the plan doesn't cover something.
 3. **Read existing `CHANGELOG.md`** if it exists.
    Note the previous version number and format so the new entry stays consistent.
+4. **Check for a project changelog mechanism.** Some projects have their own
+   user-facing changelog store beyond the repo file — e.g. a DB-backed in-app
+   "What's new" feed with an authoring CLI (like a `scripts/add-changelog-entry.mjs`).
+   Look for a Changelog section in the project's `CLAUDE.md`/`AGENTS.md` and for
+   changelog-named scripts. If one exists, read its conventions (script flags,
+   draft/publish states, tone of recent entries) — Phase 6 publishes through it.
 
 If no implementation plan exists, fall back to git history as the sole source.
 
@@ -137,6 +143,13 @@ _{Thematic summary}_
 1. If `CHANGELOG.md` exists, **prepend** the new entry above existing content (keep a blank line separator).
 2. If `CHANGELOG.md` doesn't exist, **create it** with the entry.
 3. **Read the file back** to verify it was written correctly.
+4. **If the project has its own changelog mechanism** (found in Phase 1 step 4 —
+   e.g. a DB-backed in-app changelog with an authoring script), publish the SAME
+   entry through it as well. The in-app/DB changelog is the surface users actually
+   see; `CHANGELOG.md` is the more internal, in-repo record — keep both updated.
+   Follow the mechanism's own conventions (body via file, version/date flags,
+   draft vs published), and where the project's `CLAUDE.md` gives changelog rules
+   that conflict with this skill, the project rules win.
 
 ## Anti-Patterns
 
