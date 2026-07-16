@@ -161,7 +161,7 @@ If the audit found nothing worth fixing and you added no tasks, exit immediately
 
 If you added one or more new tasks, VERIFY the project builds before committing — run the project's build command (check CLAUDE.md / AGENTS.md or the package manifest for the right command). Fix any failures yourself; build breakage is the one exception to "auditor doesn't fix code." Skip if the project has no build step.
 
-Then COMMIT with a message starting with `audit:` and a short WHY-focused summary, and push.
+Then COMMIT with a message starting with `audit:` and a short WHY-focused summary. Do NOT `git push` yourself — the loop script auto-pushes non-main branches; `main` is never pushed unless the user explicitly asks or approves.
 AUDIT
       CLAUDE_PID=$!
       write_sentinel
@@ -227,6 +227,28 @@ while [ $i -lt $MAX ]; do
     MODE="audit"
   fi
 
+  # --- Sync with main (worker iterations on non-main branches only) ---
+  # Merge the latest main into this branch every worker iteration so divergence
+  # from parallel work is resolved incrementally by the worker (prompt.txt's
+  # SYNC rule tells it to finish a conflicted merge first) instead of all at
+  # once at the final merge into main. Both refs are tried: origin/main covers
+  # remote merges (PRs), local main covers merges the user made but hasn't
+  # pushed. Only COMMITTED main state is visible here — uncommitted work in the
+  # main checkout never leaks into worktrees. Failures (conflicts, dirty tree)
+  # are deliberately non-fatal: the worker resolves them as its first action.
+  # Gated to worker mode so the auditor (whose prompt forbids fixing code)
+  # never inherits a half-merged tree.
+  if [ "$MODE" = "worker" ] && [ -n "$BRANCH" ] && [ "$BRANCH" != "main" ] && [ "$BRANCH" != "master" ]; then
+    git fetch origin 2>/dev/null || true
+    for SYNC_REF in origin/main main; do
+      git rev-parse --verify --quiet "$SYNC_REF" >/dev/null 2>&1 || continue
+      if ! git merge --no-edit "$SYNC_REF"; then
+        echo "=== Merge of $SYNC_REF left conflicts — the worker will resolve them this iteration ==="
+        break
+      fi
+    done
+  fi
+
   CLAUDE_EXIT=0
   LAST_SESSION_ID=$(gen_uuid)
   SESSION_FLAG=""
@@ -288,7 +310,11 @@ while [ $i -lt $MAX ]; do
       ;;
   esac
 
-  git push origin "$BRANCH" 2>/dev/null || git push -u origin "$BRANCH" 2>/dev/null || echo "Warning: git push failed — changes committed locally but not backed up"
+  # Auto-push as remote backup — but ONLY on a non-main branch. Pushing main
+  # is user-owned and never automatic; on main all work stays in local commits.
+  if [ -n "$BRANCH" ] && [ "$BRANCH" != "main" ] && [ "$BRANCH" != "master" ]; then
+    git push origin "$BRANCH" 2>/dev/null || git push -u origin "$BRANCH" 2>/dev/null || echo "Warning: git push failed — changes committed locally but not backed up"
+  fi
   i=$((i + 1))
 
   if [ $i -lt $MAX ]; then
@@ -305,7 +331,9 @@ if grep -q "^ALL_TASKS_COMPLETE" "$PLAN" 2>/dev/null && [ -f "$FINAL_AUDIT_FLAG"
   claude -p --model sonnet --dangerously-skip-permissions <<CHANGELOG
 Generate a changelog entry for all completed work in $PLAN. First read the existing CHANGELOG.md — match the style, headers, section structure, tone, and level of detail of recent entries exactly. Only include tasks that are marked [x] in the plan AND are not already covered by an existing CHANGELOG.md entry. Commit the changelog update with a descriptive WHY-focused message.
 CHANGELOG
-  git push origin "$BRANCH" 2>/dev/null || true
+  if [ -n "$BRANCH" ] && [ "$BRANCH" != "main" ] && [ "$BRANCH" != "master" ]; then
+    git push origin "$BRANCH" 2>/dev/null || true
+  fi
   rm -f "$FINAL_AUDIT_FLAG"
   echo "=== Done ==="
 elif grep -q "^ALL_TASKS_COMPLETE" "$PLAN" 2>/dev/null; then

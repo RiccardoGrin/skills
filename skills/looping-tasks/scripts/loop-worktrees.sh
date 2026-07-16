@@ -178,14 +178,16 @@ print_followup() {
   echo "  Merge:    git merge $BRANCH"
   echo "  Cleanup:  git worktree remove loop/worktrees/$WORKTREE_NAME"
   echo "  Resume:   bash loop/loop-worktrees.sh $PLAN_FILE [remaining_iters]"
+  echo "  Note:     $BRANCH was auto-pushed to origin; main is never pushed automatically"
 }
 trap print_followup EXIT
 
 # --- Invoke the inner loop inside the worktree ---
 # Its stdout/stderr inherit this terminal — every iteration prints live.
 # PLAN_FILE, AUDIT_EVERY, and RESUME_ID pass through as env vars / args.
-# The inner loop's git push uses `git branch --show-current`, which in the
-# worktree is the worktree's branch — so pushes go to $BRANCH automatically.
+# The inner loop auto-pushes non-main branches via `git branch --show-current`,
+# which in the worktree is $BRANCH (worktree/*) — so it gets pushed each
+# iteration. main/master are never auto-pushed.
 INNER_EXIT=0
 (
   cd "$WORKTREE_DIR"
