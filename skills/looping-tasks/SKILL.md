@@ -72,9 +72,11 @@ All `scripts/` paths are **relative to the skill directory** — resolve to abso
 
 Most customization is optional — defaults are sensible.
 
-**Audit cadence.** The loop audits every `AUDIT_EVERY` worker iterations (default 5) and once at the end.
-Override per-run with an env var: `AUDIT_EVERY=3 bash loop/loop.sh 15`.
-Smaller plans (< 15 tasks) may warrant lowering it so audits still fire before the final pass.
+**Audit cadence.** The loop audits every `AUDIT_EVERY` worker iterations (default 5), plus up to
+`MAX_FINAL_AUDITS` times (default 2) once the plan reports complete.
+Override per-run with env vars: `AUDIT_EVERY=3 MAX_FINAL_AUDITS=1 bash loop/loop.sh 15`.
+Smaller plans (< 15 tasks) may warrant lowering `AUDIT_EVERY` so audits still fire before the final pass.
+Raise `MAX_FINAL_AUDITS` only deliberately — see *How the Audit Pass Works* for why it is capped at all.
 
 **Audit checklist.** The auditor prompt inside `loop.sh` lists five categories to check: gaps vs plan, pattern match, security, comments, and tests.
 The security line is intentionally generic ("violations of rules stated in CLAUDE.md").
@@ -122,12 +124,16 @@ Understanding the audit behavior helps diagnose surprises.
 - The loop tracks `SINCE_AUDIT`, a counter of worker iterations since the last audit.
 - When `SINCE_AUDIT >= AUDIT_EVERY`, the next iteration runs the auditor instead of the worker.
   The counter resets after an audit.
-- When the worker prepends `ALL_TASKS_COMPLETE` to the plan, the loop runs one **final audit pass** before generating the changelog.
-- If the final audit finds issues worth fixing, it appends them as tasks and removes `ALL_TASKS_COMPLETE`.
-  Subsequent worker iterations pick the audit tasks up and eventually the worker restores the sentinel.
-- The final-audit pass runs exactly **once**.
-  After it runs with `ALL_TASKS_COMPLETE` still present, the script creates `loop/.final_audit_done` and goes straight to the changelog on the next loop pass — this prevents an infinite audit → fix → audit cycle.
+- When the worker prepends `ALL_TASKS_COMPLETE` to the plan, the loop runs a **final audit pass** before generating the changelog.
+- If that audit files tasks, it removes `ALL_TASKS_COMPLETE`. Workers pick the tasks up, the sentinel eventually comes back, and that triggers **another** final audit.
+- `loop/.final_audit_done` is written only when a final audit leaves `ALL_TASKS_COMPLETE` **in place**. The next pass then goes straight to the changelog.
+  It is therefore not a cap: an audit that files tasks never sets it, so the audit → fix → audit path runs around it. It ends a *clean* run; it does not end a productive one.
+- `MAX_FINAL_AUDITS` (default 2) is the actual cap. Once that many final audits have run in one invocation, the loop stops and an agent writes a hand-back message instead of opening another round.
+  It counts only `ALL_TASKS_COMPLETE`-triggered audits; periodic ones can't re-arm a completed plan, so they're uncapped.
+  It is **not persisted** — rerunning grants a fresh allowance. The thing that actually breaks the cycle is a human choosing to rerun.
 - The flag file is cleared at script start so reruns of the whole loop get a fresh final audit.
+
+> **Why the cap exists.** With only the flag, the exit condition was "an audit that finds nothing." The audit's review scope is the commits since the last `audit:` commit — i.e. the previous audit's own output — and comment prose is an unbounded surface, so passes fed on each other. One real run hit 26 rounds and ~100 injected tasks on a 5-task plan. The auditor prompt now fixes prose itself without filing a task (so it can't re-arm the loop), and `MAX_FINAL_AUDITS` backstops whatever that misses.
 
 ## Idle Watchdog
 
@@ -181,7 +187,7 @@ bash loop/loop-worktrees.sh <PLAN_FILE> [max_iterations]
 
 The wrapper creates `loop/worktrees/<name>/` on branch `worktree/<name>` (name derived from the plan filename), copies deps + envs, syncs the loop templates, and invokes `loop.sh` inside.
 The plan path is a **positional argument** to the wrapper (not an env var) — the wrapper forwards it to the inner loop as the `PLAN_FILE` env var automatically.
-Other env vars (`AUDIT_EVERY`, `RESUME_ID`) pass through to the inner loop unchanged.
+Other env vars (`AUDIT_EVERY`, `MAX_FINAL_AUDITS`, `HANDOFF_TIMEOUT`, `RESUME_ID`) pass through to the inner loop unchanged.
 The inner loop's stdout streams to this terminal live — you see every iteration exactly as you would with `loop.sh` directly.
 
 On exit (normal or Ctrl+C), the wrapper prints merge + cleanup instructions.
