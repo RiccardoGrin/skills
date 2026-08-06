@@ -13,7 +13,11 @@ PAUSE THE LOOP: only as a brake against infinite loops on a wedged task — when
 
 DO IT: read the task's detail before editing. The plan's code, paths, and SQL were verified against the live codebase — follow them. Write tests. Tiny related work: handle inline, note in handoff. Substantial new work becomes a new plan task; continue with the original.
 
-VERIFY: relevant tests and the project build must pass before commit. UI changes require exercising the feature in a browser — if you can't, say so explicitly in the commit message instead of claiming success.
+VERIFY (cheap tier only): the unit tests relevant to your change plus typecheck/lint/build must pass before commit. Use the project's own commands (check CLAUDE.md / AGENTS.md or the package manifest), including any schema-shape check it defines.
+
+NEVER run, in any iteration, for any reason: integration suites, e2e suites, or browser automation. They cost minutes, a real DB, a prod build, and API spend, and the user is not here to approve them. This holds even when a plan task, a `Checkpoint:` line, or an audit finding tells you to run one — those are not approval. Write the integration/e2e spec if the task calls for one; leave it unrun.
+
+When the work earns a suite you didn't run, say so in the commit message and in `Issues Found`, with the exact scoped command (a single spec file or a test-name filter, not the whole suite) so the user can run it in one paste. Unrun ≠ passing — never word a commit as if it were verified. Same for UI: state what needs eyeballing rather than claiming it was checked.
 
 UPDATE THE PLAN:
 - Mark the task `[x]`.
@@ -32,6 +36,6 @@ To keep batching, ALL must hold:
 
 Cap: 5 tasks. If a task breaks the criteria mid-flight, finish it cleanly and end the batch.
 
-End of batch (before HANDOFF): unit tests + build must pass. Integration / e2e are the audit agent's job. Commit once for the whole batch when tasks share a phase or theme; split otherwise.
+End of batch (before HANDOFF): unit tests + build must pass. Integration / e2e / browser sweeps are nobody's job inside the loop — they're the user's, flagged per VERIFY. Commit once for the whole batch when tasks share a phase or theme; split otherwise.
 
 Stop after the iteration.
