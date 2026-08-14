@@ -10,7 +10,8 @@ Each iteration starts a fresh session, picks the next task from the active plan,
 Fresh context per iteration is the key design principle — avoids context window degradation.
 
 Every N worker iterations (default 5) and once at the very end, the loop runs an **audit iteration** instead of a worker iteration.
-The auditor spawns parallel subagents to review recently completed work against the plan and codebase, triages the findings, and injects follow-ups into the plan as new `[ ]` tasks.
+The auditor spawns parallel subagents to review work against the plan and codebase, triages the findings, and injects follow-ups into the plan as new `[ ]` tasks.
+The two rounds have deliberately different scope: a **periodic** pass reviews only the work since the last `audit:` commit, while a **final** pass reviews the whole plan as one body of work — it is the only pass that sees the whole, and the only one that can judge duplication and redundancy, which exist only in aggregate.
 It never fixes code itself — the next worker iteration picks the audit tasks up normally — with one exception: the auditor verifies the project builds and fixes build breakage inline, since a broken build would block its own commit.
 
 The user creates the plan (via the planning skill or manually).
@@ -78,8 +79,8 @@ Override per-run with env vars: `AUDIT_EVERY=3 MAX_FINAL_AUDITS=1 bash loop/loop
 Smaller plans (< 15 tasks) may warrant lowering `AUDIT_EVERY` so audits still fire before the final pass.
 Raise `MAX_FINAL_AUDITS` only deliberately — see *How the Audit Pass Works* for why it is capped at all.
 
-**Audit checklist.** The auditor prompt inside `loop.sh` lists five categories to check: gaps vs plan, pattern match, security, comments, and tests.
-The security line is intentionally generic ("violations of rules stated in CLAUDE.md").
+**Audit checklist.** The auditor prompt inside `loop.sh` lists six categories to check: gaps vs plan, pattern match, security, comments, tests, and — final pass only — duplication/redundancy/best practices.
+The security line is intentionally generic ("violations of rules stated in CLAUDE.md"), as is the best-practices line ("the project's own stated rules").
 If the target repo's `CLAUDE.md` has specific rules worth naming explicitly (authz scoping, rate-limit tiers, webhook signature verification, etc.), edit that line to name them — a concrete auditor finds more.
 
 **Build verification at audit time.** The audit prompt instructs the auditor to run the project's build command before committing. The auditor figures out the right command from CLAUDE.md / AGENTS.md / the package manifest — generic across stacks. This lets per-commit hooks skip the (often slow) full build and run only fast checks (unit tests + typecheck), with audit serving as the periodic full-build gate. If the project has no meaningful build step, the auditor skips this.
