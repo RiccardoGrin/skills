@@ -1,6 +1,6 @@
 ---
-summary: Shadow systems, elevation, recessed elements, border techniques, and visual hierarchy patterns for web UI
-read_when: adding shadows, creating depth, establishing visual hierarchy, styling buttons/CTAs, working with elevation or border effects
+summary: Shadow systems, elevation, recessed elements, borders, translucent materials, and visual hierarchy patterns for web UI
+read_when: adding shadows, creating depth, building glass/translucent surfaces, establishing visual hierarchy, styling buttons/CTAs, working with elevation or border effects
 ---
 
 # Depth and Visual Hierarchy
@@ -43,6 +43,8 @@ Each shadow combines a light inset highlight on top with dark shadows below. The
 | `--shadow-lg` | Modals, dialogs, floating action buttons |
 
 Smaller shadows feel more natural on most elements. Default to `--shadow-sm` and only escalate when an element genuinely floats above its surroundings.
+
+This scale is for **elevation** — things that float. For an element that just needs a defined edge (a card, a bordered button, anything sitting over an image), use the `--shadow-border` ring in `surface-craft.md` instead. Never run both on the same element.
 
 ### Hover Shadow Transitions
 
@@ -208,11 +210,9 @@ Charts are data communication tools, not decoration.
 
 ### Icon Hierarchy
 
-- Use one icon library consistently (Lucide, Phosphor, Heroicons, Feather)
-- Match icon stroke width to typography weight for visual harmony
-- Filled icons = active/selected state; outline icons = inactive/default state
-- Always pair non-obvious icons with text labels or tooltips
-- Different icon styles in visually separate areas (sidebar vs content) is acceptable; within the same area, keep them uniform
+One icon library per surface. Outline is the resting state, filled marks active or selected, and non-obvious icons always carry a label or tooltip.
+
+Stroke weights, render-size rules, state coloring, and RTL flipping are in `surface-craft.md`.
 
 ---
 
@@ -317,6 +317,81 @@ In dark mode, lighter shades = elevated. In light mode, darker shades = elevated
 ```
 
 Combine background elevation with shadows only when you need a stronger floating effect (modals, popovers). For inline cards and sections, background difference alone is often sufficient.
+
+---
+
+## Translucent Materials
+
+Translucency is a floating functional layer: it brings structure without stealing focus, and it tells the user that content continues underneath. On the web, `backdrop-filter` is the approximation.
+
+```css
+.toolbar {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(20px) saturate(180%);
+  border-top: 1px solid rgba(255, 255, 255, 0.4);  /* bright edge = light catching the material */
+}
+```
+
+Rules that keep it legible:
+
+- **Build chrome as a translucent layer with content scrolling underneath**, not an opaque bar that consumes a fixed strip of the viewport.
+- **Material weight encodes hierarchy.** Heavier, darker materials separate structural regions (sidebars, nav); lighter materials draw attention to interactive elements. **Never stack a light translucent surface on another light translucent surface** — legibility collapses and the depth cue is lost.
+- **Bigger surfaces read as thicker.** A sheet gets a stronger blur and a deeper shadow than a small chip. Consider a heavier shadow over busy content and a lighter one over plain backgrounds.
+- **Dim to focus, separate to keep flow.** A blocking modal pairs its surface with a dimming scrim and pushes the background back. A parallel, non-blocking panel uses translucency and offset *without* a scrim, so the flow is not broken. For stacked sheets, progressively dim each parent layer.
+- **Keep text legible over changing backgrounds.** Over a translucent surface, do not use flat gray text — raise the contrast, add a little weight, and nudge letter-spacing. Put color on a solid layer, never on the translucent foreground.
+- **Scroll edge effects, not hard dividers.** Instead of a 1px border under a sticky header, fade a small blur or gradient mask where content meets floating chrome, and only where floating UI actually overlaps content.
+- **Materialize, don't just fade.** On enter and exit, animate blur radius and scale together so the surface reads as a material arriving rather than an opacity ramp.
+
+### Transparency and Contrast Preferences
+
+Translucency is an accessibility surface, not just a style. Handle both signals:
+
+```css
+@media (prefers-reduced-transparency: reduce) {
+  .toolbar { background: var(--bg-raised); backdrop-filter: none; }
+}
+
+@media (prefers-contrast: more) {
+  .toolbar { background: var(--bg-base); border: 1px solid var(--border-strong); }
+}
+```
+
+Also ease dark/light theme changes rather than jumping brightness abruptly, and avoid slow looping oscillations near one cycle per five seconds.
+
+---
+
+## Controls Must Read as Controls
+
+Every interactive element needs a visual signal: a background shape, a border, an underline, or placement in a consistent control zone such as a toolbar or footer row. A control styled exactly like the static text beside it is invisible.
+
+```html
+<!-- Bad — the action looks like the sentence it sits in -->
+<p class="text-muted">Your trial ends soon. Upgrade now</p>
+
+<!-- Good — the action reads as an action -->
+<p class="text-muted">Your trial ends soon.</p>
+<button class="font-medium text-primary">Upgrade now</button>
+```
+
+The inverse holds too: a non-clickable badge shaped exactly like the buttons beside it collects dead clicks.
+
+---
+
+## Order by Importance
+
+Readers scan top-to-bottom and leading-to-trailing. Place content accordingly.
+
+- The most important information sits near the top and the leading edge. The further down and further trailing something sits, the less attention it gets.
+- Never bury the one number the user came for under rows of secondary detail. Push that detail into a collapsed section, a tab, or a detail view.
+- Within a row, identifying content leads; metadata and actions trail.
+
+```html
+<!-- Good — the primary fact leads, detail is demoted -->
+<p class="text-2xl font-semibold">$4,320.00</p>
+<p class="text-sm text-muted">Available balance</p>
+```
+
+**Do not overload the entry point.** The first screenful is a table of contents, not the whole book. One primary action per view; group secondary actions behind a menu once they exceed two or three. A short view that links deeper beats a long view that shows everything at level one.
 
 ---
 

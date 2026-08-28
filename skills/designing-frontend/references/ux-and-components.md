@@ -1,9 +1,9 @@
 ---
-summary: UX principles, component architecture patterns, native HTML elements, and design system fundamentals
-read_when: designing user interfaces, building component systems, choosing HTML elements, reducing JS dependencies, planning UX flows, creating design systems
+summary: UX principles, interaction pattern choices, empty/loading/error states, onboarding, dashboard patterns, native elements, and design personality
+read_when: designing user interfaces, choosing between a modal and a popover, designing empty or loading states, planning onboarding, or deciding what character a product should have
 ---
 
-# UX Principles and Component Architecture
+# UX Principles and Interaction Patterns
 
 ## Don't Make Me Think
 
@@ -35,45 +35,6 @@ Map the shortest path from intent to task completion.
 - Reduce friction: pre-fill fields, use smart defaults, show progress indicators for multi-step flows.
 - Group related actions together. Don't scatter related controls across the page.
 - Test with real people and iterate. Your mental model of the UI is not the user's mental model.
-
-### User Flow Documentation
-
-Before building UI, create a `docs/user-flows.md` file in the project.
-This becomes a living document that the agent maintains and checks with the user.
-
-**Flow format:**
-
-```
-## Flow: [Name] (e.g., "New User Signup")
-
-**Entry point:** Landing page CTA / Direct URL / Email link
-**Goal:** User completes signup and sees dashboard
-
-1. User lands on signup page
-   - Sees: Email/password form, social login options, "Already have account?" link
-   - Data needed: None
-   - Edge cases: Returning user (redirect to login), expired invite link
-
-2. User submits form
-   - Sees: Loading state on button (gray out, show spinner)
-   - Data needed: Email, password
-   - Edge cases: Invalid email, weak password, email already taken, network error
-
-3. User lands on onboarding
-   - Sees: Welcome message, "Start here" prompt, empty dashboard with guidance
-   - Data needed: User profile
-   - Edge cases: None (first visit is always empty state)
-```
-
-**Edge cases to check at every step:**
-- **Empty state:** What shows when there's no data yet?
-- **Error state:** What happens when something fails?
-- **Loading state:** What does the user see while waiting?
-- **Unauthorized state:** What if the user lacks permission?
-- **Offline state:** What if the network drops?
-
-Present flows to the user for review before building.
-Update the doc whenever requirements change.
 
 ### Interaction Pattern Decisions
 
@@ -141,6 +102,8 @@ Avoid forced linear tutorials. Use progressive onboarding:
 
 Dashboards have different design constraints than marketing pages.
 
+Full shell anatomy — sidebar, topbar, active-state treatment, and why density is *correct* here rather than a mistake to fix — is in `references/page-composition.md`. What follows is the content inside that frame.
+
 **Layout structure:**
 - **Sidebar:** The product's navigation spine. Contains: logo, nav links, search, profile, collapse toggle. Always visible or one-click accessible.
 - **Top bar:** Reserved for page-level actions (filters, dropdowns, primary action button). Not for global navigation.
@@ -186,109 +149,9 @@ Visual consistency is not enough — terminology must be consistent too.
 
 ---
 
-## Component Architecture
+## Native Elements Worth Using
 
-Most well-designed sites use surprisingly few unique component patterns — often 2-3 core components with variations.
-
-### Identify Repeated Patterns
-
-A typical marketing page might use only:
-- A **section** component (two-column with text + media)
-- A **card grid** component
-- A **header/footer**
-
-These three patterns, with prop variations, build entire pages.
-
-### Build Reusable Components
-
-```jsx
-// One component, many variations via props
-function FeatureSection({ heading, details, icon, image, direction = "left" }) {
-  return (
-    <section className={`feature-section ${direction}`}>
-      <div className="feature-content">
-        {icon && <span className="feature-icon">{icon}</span>}
-        <h2>{heading}</h2>
-        <p>{details}</p>
-      </div>
-      {image && (
-        <div className="feature-media">
-          <img src={image} alt={heading} />
-        </div>
-      )}
-    </section>
-  );
-}
-
-// Compose pages from components
-function LandingPage() {
-  return (
-    <>
-      <Header />
-      <FeatureSection heading="Fast" details="..." image="/speed.png" direction="left" />
-      <FeatureSection heading="Secure" details="..." icon="🔒" direction="right" />
-      <CardGrid items={features} />
-      <Footer />
-    </>
-  );
-}
-```
-
-### Props Over New Components
-
-Before creating a new component, ask: can an existing component handle this with a new prop? Variants like `size`, `variant`, `direction`, or `layout` prevent component sprawl.
-
----
-
-## Design Systems
-
-A design system is a collection of reusable UI components, global CSS variables, and utility classes that enforce consistency.
-
-### Define Tokens First
-
-Set spacing, fonts, and colors as CSS variables before building any components:
-
-```css
-:root {
-  /* Spacing scale (4px unit count: --space-N = N × 4px) */
-  --space-1: 0.25rem;   /* 4px */
-  --space-2: 0.5rem;    /* 8px */
-  --space-4: 1rem;      /* 16px */
-  --space-6: 1.5rem;    /* 24px */
-  --space-8: 2rem;      /* 32px */
-
-  /* Typography */
-  --font-body: system-ui, sans-serif;
-  --font-heading: "Inter", sans-serif;
-  --text-sm: 0.875rem;
-  --text-base: 1rem;
-  --text-lg: 1.25rem;
-  --text-xl: 1.5rem;
-
-  /* Colors */
-  --color-primary: oklch(0.55 0.18 250);
-  --color-surface: oklch(0.98 0 0);
-  --color-text: oklch(0.2 0 0);
-  --color-border: oklch(0.85 0 0);
-}
-```
-
-### Utility Classes
-
-Create layout helpers to avoid repeating the same CSS:
-
-```css
-.container { max-width: 72rem; margin-inline: auto; padding-inline: var(--space-4); }
-.flex { display: flex; gap: var(--space-4); }
-.flex-col { display: flex; flex-direction: column; gap: var(--space-4); }
-.grid-auto { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--space-8); }
-```
-
----
-
-## Native HTML Elements That Replace JavaScript
-
-Use built-in elements before reaching for libraries. Less JS = faster, more accessible, fewer bugs.
+These ship behavior a hand-built equivalent usually gets wrong: focus trapping, escape-to-close, backdrop handling, keyboard support. Reach for them first.
 
 ### Modal Dialogs
 
@@ -365,18 +228,6 @@ Line 2
   <button>Submit</button>
 </form>
 ```
-
-### Favicon
-
-Browsers auto-request `favicon.ico` from the site root. Place it in your `public/` folder to avoid 404 errors in the console.
-
----
-
-## Framework Considerations
-
-- **Svelte and Astro** compile to vanilla HTML/CSS with minimal JS — better for static or mostly-static sites.
-- **Tailwind CSS** trades custom class naming for utility classes. Both approaches (utility-first and semantic CSS) are valid; pick one and be consistent.
-- **Native Web Components** (Custom Elements + Shadow DOM) work without frameworks but have SEO drawbacks and require JS to render content.
 
 ---
 

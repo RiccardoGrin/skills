@@ -1,6 +1,6 @@
 ---
-summary: Flexbox and Grid layout patterns, responsive techniques, container queries, position properties, and image optimization
-read_when: Building layouts with flexbox or grid, making designs responsive, optimizing images, using container queries
+summary: Flexbox and Grid patterns, responsive techniques, container queries, logical properties and RTL, safe areas, content-driven breakpoints, string growth, position properties, and image optimization
+read_when: Building layouts with flexbox or grid, making designs responsive, choosing breakpoints, handling mobile safe areas or RTL, optimizing images, using container queries
 ---
 
 # Layout Systems and Responsive Design
@@ -113,6 +113,14 @@ The middle value (`preferred`) typically combines a viewport unit with a rem off
 ```
 
 Prefer `dvh` (dynamic viewport height) over `vh` on mobile — `vh` includes the browser address bar area, causing overflow.
+
+### Breakpoints Come From the Content
+
+Break where the layout actually stops fitting, not at `768px` because a preset says so. The real breakpoint is where the sidebar squeezes the main column below its minimum readable measure, or the card grid drops below a usable column width.
+
+**Collapse late.** A layout that keeps its expanded structure for as long as it genuinely fits stays stable and familiar. Collapsing early throws away space the user paid for.
+
+Test the smallest and largest supported sizes first — those break first — then the sizes between.
 
 ### Media Queries
 
@@ -348,3 +356,121 @@ Use `<picture>` with `<source>` elements to serve different images based on scre
   flex: 0 1 auto; /* Don't grow, shrink if needed, size by content */
 }
 ```
+
+---
+
+## Logical Properties and RTL
+
+Express direction-dependent horizontal position as leading/trailing, not left/right, so the layout mirrors automatically under `dir="rtl"`. This costs nothing today and is the difference between a one-line locale switch and a rewrite later.
+
+| Physical (avoid) | Logical (use) |
+|---|---|
+| `margin-left` | `margin-inline-start` |
+| `padding-right` | `padding-inline-end` |
+| `left: 0` | `inset-inline-start: 0` |
+| `text-align: left` | `text-align: start` |
+| `border-right` | `border-inline-end` |
+
+```html
+<!-- Tailwind logical utilities -->
+<div class="ms-4 pe-6 text-start">...</div>
+
+<!-- Breaks in RTL -->
+<div class="ml-4 pr-6 text-left">...</div>
+```
+
+Reserve physical properties for genuinely physical geometry: positioning against a device notch, matching a hardware gesture direction.
+
+Where arrangement encodes progression — star ratings, step indicators, progress bars — the sequence mirrors in RTL, and stars fill from the trailing side. Flexbox and grid with logical properties mirror automatically; hand-positioned elements do not. Digit order inside a number never reverses.
+
+Icon mirroring rules are in `surface-craft.md`.
+
+---
+
+## Content Bleeds, Controls Float
+
+Two layers behave differently at the viewport edge:
+
+- **Content layer** — backgrounds, hero media, and scrollable lists extend edge to edge.
+- **Control layer** — text and interactive elements stay inside the layout margins and safe areas, floating above the content.
+
+```css
+/* Full-bleed media inside a constrained article */
+.article {
+  display: grid;
+  grid-template-columns: 1fr min(65ch, calc(100% - 48px)) 1fr;
+}
+.article > *            { grid-column: 2; }
+.article > .full-bleed  { grid-column: 1 / -1; }
+```
+
+### Safe Areas
+
+On devices with rounded corners, notches, and gesture bars, anything pinned to an edge needs `env(safe-area-inset-*)` padding or it sits under system UI.
+
+```css
+.fab {
+  position: fixed;
+  inset-inline-end: calc(16px + env(safe-area-inset-right));
+  bottom:            calc(16px + env(safe-area-inset-bottom));
+}
+
+.action-bar {
+  padding-inline: 16px;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+}
+```
+
+### Inset Buttons From the Edges
+
+In content layouts, a full-width button glued to the viewport looks like system chrome and clips against curved corners. Keep it inside the layout margins with a visible radius — start near `16px` inline margin on mobile. The button can still span the full content width inside them.
+
+Edge-to-edge actions are valid only when they are deliberately platform chrome and account for safe areas.
+
+---
+
+## Progressive Disclosure Needs an Affordance
+
+Hiding complexity is good. Hiding it with no cue is a trap — content nobody knows exists may as well not exist.
+
+- **Peeking items.** In a horizontal scroller or carousel, size items so the next one peeks `16-32px` past the container edge. A row of cards that ends exactly at the edge looks complete, and nobody scrolls it.
+- **Disclosure controls.** Label them with what is hidden: "Show 12 more results", never "More".
+- **Truncation cues.** Clamped text shows an ellipsis and a way to expand.
+
+```css
+.scroller {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-inline: 24px;
+  scroll-padding-inline: 24px;
+  scroll-snap-type: x mandatory;
+}
+.scroller > * {
+  flex: 0 0 calc(100% - 48px - 24px);   /* container − margins − peek */
+  scroll-snap-align: start;
+}
+```
+
+---
+
+## Plan for Growth and Clipping
+
+Layouts fail in two directions: content grows, and viewports shrink.
+
+**String expansion.** Translated strings grow, and short source strings grow proportionally more — a one-word button label is the riskiest text on the screen. Never budget a fixed percentage.
+
+- No fixed widths sized to an English label. Use `max-width` plus wrapping.
+- No fixed heights on text containers. Use `min-height` where a floor is needed.
+- Buttons size themselves from their label via `padding-inline`, never a hardcoded width.
+- Test with pseudo-localization or one long-string locale before shipping.
+
+```css
+/* Good — the label defines the size */
+.button { padding-inline: 16px; white-space: nowrap; }
+
+/* Bad — German will overflow or truncate */
+.button { width: 96px; overflow: hidden; }
+```
+
+**Clipping.** Never park a critical action where it can be cut off: the bottom edge of a resizable pane, below the fold of a fixed-height modal, behind an expanding keyboard. Keep primary actions in stable chrome — a sticky footer with safe-area padding, or the top of the view. Where a modal's content scrolls, its action row does not.
