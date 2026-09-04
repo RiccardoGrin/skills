@@ -28,3 +28,12 @@ loop.sh
 /.claude
 IMPLEMENTATION_PLAN.md
 /transcriptions
+
+# looping-tasks runtime artifacts (the loop scripts write these beside themselves)
+.current_session
+.iteration-prompt.txt
+.iteration-last.txt
+.agent-out.log
+.audit-round
+.final_audit_done
+handoff.md

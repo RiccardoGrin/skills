@@ -1,13 +1,17 @@
 ---
 name: looping-tasks
-description: Generates an autonomous implementation loop that executes tasks from a plan across Claude sessions, with periodic audit passes that inject follow-up tasks. Covers loop script, prompt design, and audit cadence. Use when setting up autonomous task execution or Ralph-style iterative workflows
+description: Generates an autonomous implementation loop that executes tasks from a plan across agent sessions (Claude Code or OpenAI Codex), with periodic audit passes that inject follow-up tasks. Covers loop script, prompt design, and audit cadence. Use when setting up autonomous task execution or Ralph-style iterative workflows
 ---
 
 # Looping Tasks
 
-Install the infrastructure to run Claude Code in an autonomous implementation loop.
+Install the infrastructure to run a coding agent in an autonomous implementation loop.
 Each iteration starts a fresh session, picks the next task from the active plan, implements it, tests it, commits, and exits.
 Fresh context per iteration is the key design principle — avoids context window degradation.
+
+The loop drives **Claude Code** (default) or **OpenAI Codex**, selected with `AGENT=claude|codex`.
+Both run through one seam (`spawn_agent` / `agent_oneshot` in `loop.sh`); everything else in the script is agent-agnostic.
+See *Choosing the Agent* below — the two differ in real ways (liveness signal, quota behaviour, instruction file).
 
 Every N worker iterations (default 5) and once at the very end, the loop runs an **audit iteration** instead of a worker iteration.
 The auditor spawns parallel subagents to review work against the plan and codebase, triages the findings, and injects follow-ups into the plan as new `[ ]` tasks.
@@ -27,7 +31,7 @@ The templates are designed to be project-agnostic — most projects need zero ch
 |----------|---------|
 | `scripts/loop.sh` | The loop driver. Implements mode selection (worker/audit/resume), retry-on-error, final-audit gating, and changelog generation. |
 | `scripts/prompt.txt` | The worker prompt — one iteration picks a task, implements, tests, commits, updates the plan, stops. |
-| `scripts/watchdog.sh` | Background process the loop launches at startup. Kills the active claude session if its transcript JSONL stops growing for 20 min, so the loop's retry path can spawn a fresh session. See "Idle Watchdog" below. |
+| `scripts/watchdog.sh` | Background process the loop launches at startup. Kills the active agent session if its liveness file stops growing for 20 min, so the loop's retry path can spawn a fresh session. See "Idle Watchdog" below. |
 | `scripts/loop-worktrees.sh` | **Optional.** Thin wrapper that runs the same loop inside a git worktree on its own branch. Delegates all iteration logic to `loop.sh` — zero duplication. See the "Worktree Mode" section below. |
 | `scripts/worktreeinclude.example` | Optional template for `.worktreeinclude` — globs of gitignored files to copy into new worktrees (`.env` etc.). |
 | `scripts/worktreesetup.example` | Optional template for `.worktreesetup` — shell script that runs once in a new worktree to install deps. |
@@ -60,6 +64,7 @@ The audit prompt and changelog prompt are inline heredocs inside `loop.sh` — t
 5. Ensure `loop/` is gitignored — append `loop/` to `.gitignore` if it isn't already.
    The loop directory holds runtime artifacts (`handoff.md`, `.final_audit_done`, `.current_session`) and a personal-to-the-user prompt, so it should not be checked in.
 6. On macOS/Linux, `chmod +x loop/loop.sh loop/watchdog.sh`.
+7. If the loop will run on Codex (`AGENT=codex`) and the repo has a `CLAUDE.md` but no `AGENTS.md`, create a thin `AGENTS.md` at the repo root pointing at `CLAUDE.md` — Codex does not read `CLAUDE.md`. Keep the rules in one file and point at it; do not duplicate them, and do not symlink (see *Choosing the Agent*). This one is committed, unlike everything else in `loop/`.
 
 All `scripts/` paths are **relative to the skill directory** — resolve to absolute paths before copying.
 
@@ -86,14 +91,15 @@ If the target repo's `CLAUDE.md` has specific rules worth naming explicitly (aut
 
 **Build verification at audit time.** The audit prompt instructs the auditor to run the project's build command before committing. The auditor figures out the right command from CLAUDE.md / AGENTS.md / the package manifest — generic across stacks. This lets per-commit hooks skip the (often slow) full build and run only fast checks (unit tests + typecheck), with audit serving as the periodic full-build gate. If the project has no meaningful build step, the auditor skips this.
 
-**Restricted tools.** By default the script uses `--dangerously-skip-permissions`.
-If the user wants restricted tool access, replace it with `--allowedTools` and a whitelist tailored to the detected stack (e.g., `"Read,Glob,Grep,Edit,Write,Bash(git *),Bash(pnpm *),Bash(npx *),Task"`).
-Apply the same change to every `claude` invocation in the script.
+**Restricted tools.** By default the script uses `--dangerously-skip-permissions` (claude) / `--dangerously-bypass-approvals-and-sandbox` (codex).
+On claude, if the user wants restricted tool access, replace it with `--allowedTools` and a whitelist tailored to the detected stack (e.g., `"Read,Glob,Grep,Edit,Write,Bash(git *),Bash(pnpm *),Bash(npx *),Task"`) in `spawn_agent`'s claude arm and in `agent_oneshot`.
+On codex there is no middle setting worth using — see *Choosing the Agent*.
 
-**Model choice.** The worker and auditor both use `--model opus`.
-The changelog pass uses `--model sonnet`.
+**Model choice.** Claude: worker and auditor use `--model opus`, the changelog pass `sonnet` (`CLAUDE_MODEL` / `CLAUDE_FAST_MODEL`).
 These are unversioned aliases — they track the current opus/sonnet and don't need manual updating as new versions release.
-Only change them if the user specifically wants a different capability tier.
+Codex: `CODEX_MODEL` (default `gpt-5.6-sol`, the flagship tier) and `CODEX_EFFORT` (default `high`).
+Codex model names ARE versioned — there is no `latest` alias — so they need updating as releases land.
+Only change tiers if the user specifically wants a different capability level, or to stretch a subscription window.
 
 **Windows/PowerShell users.** `./loop.sh` won't execute directly in PowerShell — it triggers a "choose program" dialog.
 Running `bash loop/loop.sh` may also fail because PowerShell resolves `bash` to `C:/Windows/System32/bash.exe` (WSL launcher), not Git Bash.
@@ -103,6 +109,34 @@ Instruct the user to either:
 
 The bundled script already includes `export PATH="/usr/bin:/mingw64/bin:$PATH"` which ensures Git Bash utilities (`grep`, `cat`, `find`, etc.) are available even when Git Bash is invoked from PowerShell without its normal startup.
 Do NOT generate a `.ps1` equivalent — PowerShell treats `-` as a unary operator and special characters (em dashes, etc.) break string parsing, making the prompt content unreliable.
+
+## Choosing the Agent
+
+`AGENT=claude` (default) or `AGENT=codex`. The seam is `spawn_agent` / `agent_oneshot` in `loop.sh` — a third CLI is a new `case` arm, not edits across the script.
+
+**Codex prerequisites.** `npm install -g @openai/codex`, then `codex login` once (browser OAuth).
+A ChatGPT Plus/Pro/Business plan includes Codex CLI usage — check `~/.codex/auth.json` shows `"auth_mode": "chatgpt"` and no API key is needed.
+If the user has the Codex **desktop app**, it already wrote that file and the CLI shares it — they may already be logged in.
+
+**The desktop app cannot run the loop.** It has no scriptable one-shot mode. `codex exec` is the headless counterpart to `claude -p`; if the user asks about the app, that is the answer.
+
+**Flags are not interchangeable, and the docs are stale.** `codex exec` has REMOVED `-a/--ask-for-approval` and `--full-auto` (exec hardcodes approval=never; the bypass flag is what selects `danger-full-access`), and `-s workspace-write` is effectively read-only on native Windows. Blog posts and even the official CLI reference still recommend `-a never -s workspace-write`; the installed binary rejects both. Verify any flag change with `codex exec --help` before shipping it.
+`codex exec resume` additionally rejects `-s -a -C --add-dir -p --color` — only `--model`, the two bypass flags, `-c`, `-o`, `--json` and the `--ignore-*` flags survive onto resume. This is why `loop.sh` keeps `CODEX_FRESH_FLAGS` separate from `CODEX_FLAGS`.
+
+**`--ignore-user-config` is deliberate.** On a machine that also has the Codex desktop app, `~/.codex/config.toml` is written BY that app — plugins, MCP servers, and a turn-ended notify hook, all of which would spawn every iteration of an unattended loop. Auth resolves from `CODEX_HOME`, not that file, so the subscription login is unaffected; AGENTS.md discovery is likewise unaffected.
+
+**`CODEX_EFFORT` is validated by the script, because codex will not validate it.** The config enum has a catch-all string variant, so `-c model_reasoning_effort=hgih` is accepted and forwarded — the run then reasons at some other level for the whole loop with no error. Note `gpt-5.6-sol`'s own default is `low`, so this knob does real work. `ultra` is excluded on purpose: it delegates to subagents.
+
+**Subscription quota is a hard stop, not a flake.** Codex classes usage-limit as non-retryable and exits 1. The loop detects the message and stops cleanly with the rerun command rather than burning its retry on a window that resets in hours. Roughly: a ~100-iteration run on the flagship tier at `high` effort will exhaust a Plus window. `CODEX_MODEL=gpt-5.6-terra` or `CODEX_EFFORT=low` goes considerably further.
+
+**Instruction file.** Claude Code reads `CLAUDE.md`; Codex reads `AGENTS.md` (merged from git root down to cwd, 32 KiB cap). If the repo has only `CLAUDE.md`, add a thin real `AGENTS.md` pointing at it.
+Do **NOT** symlink `AGENTS.md → CLAUDE.md`: Codex does follow real symlinks, but Git Bash `ln -s` silently creates a *copy* unless `MSYS=winsymlinks:nativestrict` is set, and `core.symlinks` is false in most Windows clones. It looks correct on day one and drifts forever after.
+
+**Two known Codex behaviours the loop absorbs rather than fixes:**
+- `codex exec` can exit **0** when a nested command failed (open upstream bug). Harmless here — the next iteration re-reads the plan and picks up whatever is still unchecked — but it means exit code alone is not proof an iteration worked.
+- `~/.codex/sessions` grows without bound (one report reached ~165 GiB). Prune it occasionally. `--ephemeral` would prevent it but breaks resume.
+
+**Codex always runs PowerShell on Windows**, regardless of the shell that launched it, and this is not configurable. Prompt/plan instructions written in bash idiom will fight the runtime.
 
 ## Phase 5: Show the User How to Run It
 
@@ -117,6 +151,8 @@ Do NOT generate a `.ps1` equivalent — PowerShell treats `-` as a unary operato
    - **Resume after interrupt**: `bash loop/loop.sh 10 <session-id>` (the session ID is printed when you Ctrl+C mid-iteration)
    - **Tune audit cadence**: `AUDIT_EVERY=3 bash loop/loop.sh 10`
    - **Custom plan file**: `PLAN_FILE=docs/plans/my_plan.md bash loop/loop.sh 10`
+   - **Run on Codex instead of Claude**: `AGENT=codex bash loop/loop.sh 10`
+     (PowerShell: `$env:AGENT="codex"; & "C:/Program Files/Git/usr/bin/bash.exe" loop/loop.sh 10`)
 4. Recommend: run with `1` first, review the result, then scale up.
 
 ## How the Audit Pass Works
@@ -139,9 +175,15 @@ Understanding the audit behavior helps diagnose surprises.
 
 ## Idle Watchdog
 
-A claude session can wedge mid-iteration in ways that don't return an error — most commonly a Bash polling loop with an `until` predicate that never matches (e.g., `until grep -qE "loaded|error|^[A-Za-z]" ...; do sleep 2; done` against output that starts with a non-ASCII character). The session burns CPU forever, never exits, and the loop never advances.
+An agent session can wedge mid-iteration in ways that don't return an error — most commonly a Bash polling loop with an `until` predicate that never matches (e.g., `until grep -qE "loaded|error|^[A-Za-z]" ...; do sleep 2; done` against output that starts with a non-ASCII character). The session burns CPU forever, never exits, and the loop never advances. Codex has its own version of this: a documented failure where the run stalls with its socket in CLOSE_WAIT and its internal idle timeout never fires.
 
-`watchdog.sh` covers this. At startup, `loop.sh` spawns it in the background and reaps it via an `EXIT` trap. Before each `claude` invocation, the loop writes the claude PID and session ID to `loop/.current_session`; the watchdog reads that file every 60s, finds the session's transcript at `~/.claude/projects/<encoded-cwd>/<session-id>.jsonl`, and if the transcript hasn't been touched for `IDLE_TIMEOUT` seconds (default 1200 = 20 min), kills the claude process tree. The loop's existing retry-on-error path then spawns a fresh session on the same iteration.
+`watchdog.sh` covers this. At startup, `loop.sh` spawns it in the background and reaps it via an `EXIT` trap. Before each agent invocation the loop writes the PID and session ID to `loop/.current_session`; the watchdog reads that file every 60s and stats the session's **liveness file**, killing the process tree if it hasn't grown for `IDLE_TIMEOUT` seconds (default 1200 = 20 min). The loop's retry-on-error path then spawns a fresh session on the same iteration.
+
+The liveness file differs by agent, which is the one place the watchdog is not agent-agnostic:
+- **claude** — the session transcript at `~/.claude/projects/<encoded-cwd>/<session-id>.jsonl`.
+- **codex** — `loop/.agent-out.log`, the loop's tee of codex's stdout. Codex writes no per-session file that can be stat'd, but it does stream to a pipe incrementally, so the tee's mtime tracks progress. This is load-bearing: if a future codex version block-buffers to a non-TTY, every iteration would be killed at `IDLE_TIMEOUT` and retried forever. Re-verify it if codex behaviour changes.
+
+Idle-based (not wall-clock) is deliberate: a legitimately long iteration is not killed, only a silent one. Do not "simplify" this to wrapping the agent in `timeout`.
 
 **Tunables** (env vars, set on the same line as `bash loop/loop.sh`):
 
@@ -150,7 +192,9 @@ A claude session can wedge mid-iteration in ways that don't return an error — 
 
 **Behavior notes:**
 
-- Tree kill is mandatory, not a defense-in-depth nicety. Killing the claude PID alone leaves descendant Bash subprocesses alive on Windows (observed: a stuck `until grep ...; do sleep 2; done` survived its parent claude's death). The watchdog uses `taskkill /T /F /PID` on Windows and `pkill -P` + `kill` on Unix.
+- Tree kill is mandatory, not a defense-in-depth nicety. Killing the agent PID alone leaves descendant Bash subprocesses alive on Windows (observed: a stuck `until grep ...; do sleep 2; done` survived its parent's death). The watchdog uses `taskkill //T //F //PID` on Windows and `pkill -P` + `kill` on Unix.
+- **Windows PID translation is subtle and was silently broken for a long time.** `taskkill` needs the real Windows PID, not the MSYS PID bash reports. Two traps, both fixed in the current script, both worth knowing before editing it: (1) Git-for-Windows `ps` is NOT procps — it has no `-o/--format`, so the natural `ps -p PID -o winpid=` fails outright and yields an empty string, skipping `taskkill` entirely; parse the fixed-width table's 4th column instead. (2) The MSYS→Windows mapping legitimately MOVES within the first second, because the agent's launcher is a shell shim that `exec`s (measured: 25308 at t=0, 6840 at t=1) — so the watchdog must re-derive the winpid at kill time rather than comparing it against the recorded one and aborting on a difference. With both bugs present the kill never ran at all, so a wedged agent just hung the loop.
+- **A kill can land mid-`git commit`.** Now that tree-kill actually works, the retry path clears a leftover `.git/index.lock` — without it every subsequent git operation in the run fails.
 - Deterministic hangs burn the retry. If the worker keeps tripping the same trap, watchdog kills first → 60s wait → fresh session hits the same trap → watchdog kills again → loop exits 1. That's the intended behavior — repeated identical hangs are a bug, not a flake.
 - Between iterations the sentinel is cleared, so the watchdog idles silently during the 10s pause and the 60s retry sleep.
 - If `watchdog.sh` is absent (e.g., the user only copied `loop.sh`), `start_watchdog` no-ops. Loop runs exactly as before, just without the safety net.
@@ -227,5 +271,6 @@ After the loop completes, run `/reviewing-code` for a final adversarial review b
 | Restricting tools by default | Let the agent use code execution; restrict only when specifically needed |
 | Automating the planning step | Planning requires user decisions — keep it manual, let the loop implement |
 | Setting `AUDIT_EVERY` very high to "save tokens" | Audit drift compounds. The point of periodic audits is catching issues while context is small. Default 5 is already a reasonable upper bound |
-| Pinning the model to a specific version (e.g., `opus-4-6`) | Use the unversioned alias (`opus`, `sonnet`) so the loop tracks current releases automatically |
+| Pinning the model to a specific version (e.g., `opus-4-6`) | On claude, use the unversioned alias (`opus`, `sonnet`) so the loop tracks current releases automatically. Codex has no such alias — its model names are versioned, so check them against `codex exec --help` / the model list when a release lands |
+| Copying a `codex exec` flag set from a blog post or the official CLI reference | Verify against the installed binary — both are stale on the flags that matter (`-a`, `--full-auto`), and `codex exec resume` accepts a different set than `codex exec` |
 | Editing `loop/loop.sh` in the skill repo for a project-specific tweak | Keep the skill's `scripts/loop.sh` generic. Tweak the copy in the target repo's `loop/` directory |
