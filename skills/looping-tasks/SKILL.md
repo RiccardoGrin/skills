@@ -13,6 +13,7 @@ Every N worker iterations (default 5) and once at the very end, the loop runs an
 The auditor spawns parallel subagents to review work against the plan and codebase, triages the findings, and injects follow-ups into the plan as new `[ ]` tasks.
 The two rounds have deliberately different scope: a **periodic** pass reviews only the work since the last `audit:` commit, while a **final** pass reviews the whole plan as one body of work — it is the only pass that sees the whole, and the only one that can judge duplication and redundancy, which exist only in aggregate.
 It never fixes code itself — the next worker iteration picks the audit tasks up normally — with one exception: the auditor verifies the project builds and fixes build breakage inline, since a broken build would block its own commit.
+Both rounds are bounded by the **plan**, never by the log: the loop merges `main` in every iteration, so the branch history also carries parallel work the plan never asked for, and an auditor that reviews the window instead of the plan files tasks against code the loop then rewrites. Anything real but out of scope goes under `Issues Found` as a note, not as a `[ ]` task.
 
 The user creates the plan (via the planning skill or manually).
 The loop only implements — but the agent can update the plan when it discovers new work, bugs, or needed refactoring.
