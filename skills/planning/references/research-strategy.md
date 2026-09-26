@@ -3,6 +3,7 @@
 ## Table of Contents
 
 - [When to Research](#when-to-research)
+- [Benchmark and Real-World Samples](#benchmark-and-real-world-samples)
 - [Research Types](#research-types)
 - [Using Sub-Agents](#using-sub-agents)
 - [Synthesizing Findings](#synthesizing-findings)
@@ -12,7 +13,9 @@
 
 Research adds value when the planning agent lacks information that would materially change the plan.
 
-**Research when:**
+**Always research** a plan that adds or changes a capability users will touch: run the benchmark and collect real-world samples (next section).
+
+**Also research when:**
 
 - Building a user-facing feature where UX conventions matter (how do other products handle this?)
 - Choosing between technical approaches with non-obvious tradeoffs
@@ -23,10 +26,40 @@ Research adds value when the planning agent lacks information that would materia
 **Skip research when:**
 
 - The feature is purely internal (refactoring, infrastructure, CI/CD)
-- The approach is well-established and the team has done it before
-- The user has already provided thorough context and requirements
-- Time is the primary constraint and the user wants to move fast
+- The user explicitly asks to skip it
 - The change is small enough that research would take longer than implementation
+
+"The team has done it before" and "the code already handles this" are not reasons to skip the benchmark: an existing implementation is exactly what the benchmark checks.
+
+## Benchmark and Real-World Samples
+
+These two checks stop a plan from being internally consistent but far weaker than what users can already get elsewhere.
+
+### Benchmark
+
+Compare the capability, as outcomes, against 2-4 leading products.
+Measure what a user can actually do: supported formats, size and count limits, what runs where, what happens on failure.
+
+```
+| Capability | Leader A | Leader B | This plan | Gap approved? |
+|---|---|---|---|---|
+| Bundled binary files (fonts, images) | kept, 30 MB bundle | kept, 50 MB zip | dropped at install | no, raise it |
+| Scripts run from the skill folder | yes | yes | retyped by the model | no, raise it |
+```
+
+Every row where the plan falls short goes to the user as a choice, with the cost of closing the gap.
+
+### Real-World Samples
+
+Collect real instances of what the feature will handle and measure them: popular public examples, the user's own data, real payloads.
+Record structure, sizes, formats and anything unusual (spaces in file names, binaries, nested folders).
+Pick 2-3 of them as the plan's **golden examples**: the cases that must work end to end.
+Every cap or restriction in the plan must be justified against these numbers, not guessed.
+
+**Good sub-agent prompts:**
+
+- "List the files, total size and largest file of the 10 most popular public [skills / templates / integrations] in [repo or marketplace]. Flag binaries, unusual file names and anything outside the standard layout."
+- "For [capability], what can a user do in [product A], [product B] and [product C]? Report limits, formats and failure behavior with sources."
 
 ## Research Types
 
@@ -162,3 +195,5 @@ is missing focus trapping — this should be addressed as part of this feature.
 | Researching well-known patterns | Only research when there's genuine uncertainty |
 | Spending time on research when the user wants speed | Ask: "Should I research how others handle this, or move straight to planning?" |
 | Ignoring research findings that conflict with initial assumptions | Update the plan — that's why you researched |
+| Checking that the design matches a spec's structure | Check what real samples can actually do under the design |
+| Picking caps and allowlists from intuition | Derive them from measured real-world samples |

@@ -3,6 +3,7 @@
 ## Table of Contents
 
 - [Interview Mindset](#interview-mindset)
+- [Explaining Clearly](#explaining-clearly)
 - [Question Categories](#question-categories)
 - [Strong vs Weak Questions](#strong-vs-weak-questions)
 - [When to Stop](#when-to-stop)
@@ -24,9 +25,32 @@ You're not just gathering specs — you're stress-testing the idea, identifying 
 - **Flag non-obvious implications.** "If we go with approach A, that means we'll also need to handle X — are you okay with that scope?"
 - **Challenge when appropriate.** If the user's request has a simpler or better solution, say so. "You asked for X, but based on what I see in the codebase, Y might solve the same problem with less complexity. Here's why..."
 
+## Explaining Clearly
+
+The user decides better when a question is short, concrete and tied to what they will see.
+A technically correct question they cannot picture gets a guess instead of a decision.
+
+- **Consequence first, mechanism second.** Say what the user gains or loses, then name the file, function or setting that causes it.
+- **Use an example when it carries the point.** A real file name, a real product, a real number ("a 5.5 MB font skill would be refused") beats an abstract rule. Skip examples for choices that are already obvious.
+- **Keep technical names, but wrap them.** Don't dumb things down; put `SKILL_FILE_MAX_BYTES` inside a sentence that says what it limits and why it matters.
+- **Keep each batch short.** Background a question needs fits in one sentence plus a recommendation, not a lecture.
+
+| Weak | Strong |
+|------|--------|
+| "Map resources by directory (`references/`, `scripts/`) and mark the rest `unmapped`?" | "Should files outside `references/` and `scripts/` be kept? Anthropic's own pdf skill keeps `reference.md` next to `SKILL.md`, and its instructions point at it; dropping it means the skill installs but can't find its own docs. I'd keep every file at its original path." |
+| "Return script text from the loader instead of executing?" | "When a skill includes a script, should the agent run the file as-is, or read it and retype it into the sandbox? Other platforms run it in place; retyping breaks scripts that import sibling files or read bundled assets." |
+
 ## Question Categories
 
 Not every category applies to every feature. Use judgment.
+
+### Parity & Real-World Fit
+
+For any capability users will touch, pin down what "good" means before designing.
+
+- Which products does the user consider the bar, and should we match, get close to, or exceed them?
+- Which 2-3 real-world examples must work end to end? Offer concrete candidates (popular public examples, the user's own files) rather than asking open-ended.
+- Is there anything the leading products do that the user deliberately does not want?
 
 ### Problem & Goals
 
@@ -116,6 +140,7 @@ For changes that affect existing functionality.
 | "This feature touches the same user data as the settings page. Should they share a data source, or is it okay to have separate queries? Shared means instant consistency; separate means simpler code but potential staleness." | Surfaces a real architectural decision with concrete tradeoffs |
 | "I notice your auth middleware doesn't currently handle refresh tokens. This feature will need authenticated API calls — should we add refresh token handling now, or scope this to only work within the current session?" | Flags a dependency the user may not have considered |
 | "The form has 8 fields. Should all show at once, or would a multi-step wizard reduce friction? Based on what I see in competitor X, similar forms typically use 2-3 steps." | Brings external research into the question |
+| "The existing code only stores text files, which is why skills with fonts or images fail. Keeping that is simplest, but it rules out skills like Anthropic's `canvas-design`. Should we store binary files too? It adds a column and roughly two tasks." | Challenges an inherited limit with a real example and the cost of changing it |
 
 ## When to Stop
 

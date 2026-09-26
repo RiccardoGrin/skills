@@ -9,6 +9,23 @@ Create concrete, implementation-ready plans for features and complex changes.
 
 DO NOT write code during planning. Only explore, research, analyze, and document. Be thorough.
 
+**Judge the plan by outcomes, not structure.**
+A plan can match a spec, pass every review and still ship something far weaker than what the best products already offer.
+The checks that catch this are the golden examples, the benchmark and the "What This Plan Rules Out" list (Phases 2 and 4).
+
+## Talking to the User
+
+Planning is thorough; what the user reads must stay short and clear.
+This applies to every question, finding and summary in every phase.
+
+- Lead with the point in plain words, then fit the technical names (files, functions, limits) inside that explanation, never jargon on its own
+- Give a concrete example whenever it makes a choice or a consequence clearer; skip it when the point is already obvious
+- Describe each option by what it means for the user in practice, not only by its mechanism
+- Keep each item to what it is, why it matters, and what you recommend
+
+Bad: "Skip non-text extensions at fetch (allowlist `.md .py …`)?"
+Good: "Should installs keep binary files? Today a skill's fonts or images (e.g. `assets/OpenSans-Bold.ttf`) are dropped, so a skill that renders with them installs but fails when used."
+
 ## Reference Files
 
 | File | Read When |
@@ -62,6 +79,8 @@ Don't ask — inform.
 **Question domains** (not exhaustive — use judgment):
 
 - Problem definition and success criteria
+- Golden examples: which real-world cases must work end to end (offer concrete candidates, e.g. three popular public examples of the thing being built)
+- Ambition relative to the best existing products: match, get close, or exceed them
 - User-facing behavior and interaction design
 - Edge cases, error states, and failure modes
 - Performance, scale, and data implications
@@ -75,9 +94,16 @@ Read `references/discovery-interview.md` for detailed question categories and ex
 
 ### Phase 2: Research
 
-Go beyond the codebase. Not every plan needs this — skip when the feature is purely internal, the approach is well-established, or the user has provided sufficient context.
+Go beyond the codebase.
+**Research is required for any plan that adds or changes a capability users will touch.**
+Skip it only for purely internal work (refactors, infrastructure, CI) or when the user explicitly asks to skip it.
 
-**When to research:**
+**Always, for a user-facing capability:**
+
+- **Benchmark** — how 2-4 leading products handle the same capability, described as outcomes (what a user can do, sizes, limits, formats), not features lists. The target is to match them, get close, or ideally exceed them. Record it as a parity table; every row where the plan falls short needs the user's approval.
+- **Real-world samples** — collect and measure real instances of what the feature will handle (popular public examples, real files, real payloads): their structure, sizes and formats. These become the plan's golden examples and the evidence behind every cap or restriction.
+
+**Also research when:**
 
 - The feature involves user-facing patterns where conventions matter (forms, navigation, onboarding, dashboards, etc.)
 - There are multiple viable technical approaches and the tradeoffs aren't obvious
@@ -110,6 +136,7 @@ Explore the codebase systematically. Use sub-agents for parallel exploration whe
 - **Similar implementations** — existing features that solve analogous problems, to maintain consistency
 - **Constraints** — technical limitations, conventions from AGENTS.md or CLAUDE.md, framework constraints
 - **Operational context** — git history, decision logs, known issues, and "except when" rules — tribal knowledge that doesn't live in code but affects how changes should be made
+- **Inherited decisions** — limits and choices this plan inherits from existing code or earlier plans (check commit history and old plans for their original reasoning). Keeping them is the default. But if one looks wrong, outdated, or stands between the plan and a golden example or benchmark row, raise it with the user: pros, cons, a recommendation, and what changing it would add to the plan. Do this even if it makes the plan larger. Never treat an inherited limit as settled just because the code "already works".
 
 **Document findings as:**
 
@@ -122,6 +149,18 @@ Explore the codebase systematically. Use sub-agents for parallel exploration whe
 Synthesize discovery, research, and analysis into an implementation-ready plan.
 
 **Describe outcomes, not mechanical steps.** "Make the auth middleware reject expired tokens and return 401" beats "Add an if-statement checking token.exp against Date.now()." Specify what the change should achieve — let the implementer choose the approach.
+
+**Every limit is a decision, wherever it is written.**
+A cap, a skipped file type, a refusal, a deferral or a "not supported" inside a task's text limits what users can do just as much as an item in the decisions list.
+Before persisting the plan:
+
+1. Walk each golden example through the plan end to end and note where it would fail or degrade.
+2. Collect every such limit into **What This Plan Rules Out**: the user-visible consequence, a concrete example, and how hard it is to undo later.
+3. Present that list to the user and let them choose for each item: accept it, or change the plan (even if it grows).
+
+Present a trade-off as a trade-off.
+A security or simplicity choice that removes a capability is not "stricter than" or "better than" what others do; say what users lose and let the user decide.
+Project rules against speculative code cover speculative plumbing, never dropping part of a format or standard the feature adopts.
 
 **For each change, specify:**
 
@@ -147,9 +186,16 @@ Synthesize discovery, research, and analysis into an implementation-ready plan.
 ## Goal
 [One sentence: what we're building and why]
 
+## Golden Examples
+[2-3 real-world cases that must work end to end once this ships, with links]
+
 ## Research Insights
 [Key findings from external research that informed the plan]
-[Skip this section if no external research was done]
+[Benchmark table: capability | leading products | this plan | gap approved?]
+[Skip only for purely internal work]
+
+## What This Plan Rules Out
+[Each limit, skip, refusal or deferral: user-visible consequence, example, how hard to undo, user's choice]
 
 ## Changes
 
@@ -180,9 +226,16 @@ Synthesize discovery, research, and analysis into an implementation-ready plan.
 ## Goal
 [One sentence: what we're building and why]
 
+## Golden Examples
+[2-3 real-world cases that must work end to end once this ships, with links]
+
 ## Research Insights
 [Key findings from external research that informed the plan]
-[Skip this section if no external research was done]
+[Benchmark table: capability | leading products | this plan | gap approved?]
+[Skip only for purely internal work]
+
+## What This Plan Rules Out
+[Each limit, skip, refusal or deferral: user-visible consequence, example, how hard to undo, user's choice]
 
 ## Phase 1: [Phase Name, e.g. "Data Model"]
 
@@ -237,17 +290,19 @@ Keep the plan file updated as implementation proceeds — it becomes the source 
 
 If the user confirmed the plan will be executed via a loop (always ask about loop execution in Phase 1 — phrase it as an option: "Will you implement this via an autonomous loop?"):
 
-1. Write the loop-ready file as `IMPLEMENTATION_PLAN.md` — always use this exact filename. Place it in the project root by default, or in the project's established plan directory (e.g., `docs/plans/IMPLEMENTATION_PLAN.md`) if one exists. Never use a custom or descriptive filename — the loop script searches for this exact name
+1. Write the loop-ready file using the naming rules in Persist the Plan below: default to `IMPLEMENTATION_PLAN.md`, or choose a unique descriptive filename when that name already exists.
+   Loop tooling expects `IMPLEMENTATION_PLAN.md` at execution time; the user handles renaming before running it, so do not ask about the filename or block planning.
 2. Convert each change in the plan to a flat task:
    - `- [ ] [Description] — [file path] — [brief approach]`
 3. Preserve phase ordering if the plan uses phased grouping
 4. Each task must be completable in one loop iteration — split large changes if needed
-5. Add a Goal section from the plan
+5. Add the Goal, Golden Examples and What This Plan Rules Out sections from the plan, so loop audits can check outcomes and not only task completion
 6. Add empty Decision Log and Issues Found sections
-7. Fold every bit of context a task needs directly into that task's line (and the `## Notes` section). There is no separate plan document to point at — `IMPLEMENTATION_PLAN.md` must be fully self-contained
+7. Fold every bit of context a task needs directly into that task's line (and the `## Notes` section). There is no separate plan document to point at — the chosen plan file must be fully self-contained
 8. Note: the loop script detects completion by checking for `ALL_TASKS_COMPLETE` at the start of the file. Include a comment at the top of the generated plan: `<!-- When all tasks are done, the loop agent prepends ALL_TASKS_COMPLETE above this line -->`
 
-There is only ever **one** plan file: `IMPLEMENTATION_PLAN.md`. It holds both the context and the executable task list. Never split the rich context into a second document (e.g. `docs/plans/<feature>.md`) and have the task list reference it — that produces two plan files, which is exactly what to avoid.
+Keep exactly one self-contained plan file per work item, containing both context and executable tasks.
+Plans for different work items may coexist under distinct filenames; do not split one work item into a summary plan and a companion full-context document.
 
 **Agent capabilities**: Do not assume art or asset tasks are human-only. Agents may have skills for sprite creation, image generation, or other asset work. Plan these as normal tasks — the implementing agent will check its available skills and attempt them. Only mark a task as requiring human input when it genuinely cannot be automated (e.g., subjective creative direction, licensing decisions).
 
@@ -263,16 +318,21 @@ Tasks that produce temporary placeholders should be marked `Done (placeholder)` 
 
 Write the completed plan to a single markdown file so it survives beyond this session.
 
-**Produce exactly one plan file, always named `IMPLEMENTATION_PLAN.md`.** Never create a second plan document — no `docs/plans/<feature>.md`, no companion "full context" file, no descriptive filename like `auth-refactor-plan.md` or `feature-roadmap.md`. All context, structure, and tasks live in the one `IMPLEMENTATION_PLAN.md`. This exact filename is what the loop script and other tooling searches for, and keeping everything in one file is what keeps the plan clear.
+**Produce exactly one self-contained plan file per work item.**
+Default to `IMPLEMENTATION_PLAN.md`; if that path already exists, preserve it and automatically choose a unique name matching the work, such as `SOCIAL_MEDIA_IMPLEMENTATION_PLAN.md`.
+If the descriptive name also exists, add a numeric suffix (for example, `SOCIAL_MEDIA_2_IMPLEMENTATION_PLAN.md`) until the path is unused.
+Do not ask for confirmation, inspect completion status to decide whether to replace another plan, or pause over naming conflicts.
+An explicit request to revise an existing plan still targets that plan.
 
 - Place `IMPLEMENTATION_PLAN.md` in the project root by default
-- If the project has an established plan directory (e.g., `docs/plans/`), place it there instead — but the filename must still be exactly `IMPLEMENTATION_PLAN.md`, and it remains the only plan file
-- **Format**: The plan MUST use the structured format from the plan templates — with the specific sections (Goal, Changes/Phases, Edge Cases, Validation) and numbered changes with File/Target/Action/Verify fields. Never output a generic prose plan or Claude-style plan mode output. Every plan must have actionable structure, not walls of text
+- If the project has an established plan directory (e.g., `docs/plans/`), place it there instead, applying the same unique-name rule and honoring any user-specified location
+- **Format**: The plan MUST use the structured format from the plan templates — with the specific sections (Goal, Golden Examples, Research Insights, What This Plan Rules Out, Changes/Phases, Edge Cases, Validation) and numbered changes with File/Target/Action/Verify fields. Never output a generic prose plan or Claude-style plan mode output. Every plan must have actionable structure, not walls of text
 - The plan must be a standalone document — readable and actionable in a future session without conversation history. Since it is the only plan file, it cannot defer detail to anything else
 
-**This file is temporary.** Once the work is fully implemented and audited, the user deletes `IMPLEMENTATION_PLAN.md`. So nothing in it is a long-term record. Any decision, constraint, rationale, or "why" that must outlive implementation has to be captured where it persists — concise but clear **code comments** and **front matter** at the point it's relevant — not left only in the plan. When writing the plan, flag durable knowledge (non-obvious rationale, business logic, gotchas, invariants) so the implementing agent knows to encode it in the code itself before the plan is discarded.
+**This file is temporary.** Once the work is fully implemented and audited, the user deletes the plan file. So nothing in it is a long-term record. Any decision, constraint, rationale, or "why" that must outlive implementation has to be captured where it persists — concise but clear **code comments** and **front matter** at the point it's relevant — not left only in the plan. When writing the plan, flag durable knowledge (non-obvious rationale, business logic, gotchas, invariants) so the implementing agent knows to encode it in the code itself before the plan is discarded.
 
-**If an `IMPLEMENTATION_PLAN.md` already exists, do not overwrite or append to it without checking.** Read it first. If it is already complete (all tasks done / superseded), it's safe to replace. But if it contains an **unfinished** plan — open tasks, partial progress — stop and ask the user how to proceed. Offer to write the new plan to a separate, distinctly-named file instead, e.g. `[CUSTOM_NAME]_IMPLEMENTATION_PLAN.md` (with a descriptive `CUSTOM_NAME`), so the in-progress plan is preserved. Note that loop tooling searches for the exact name `IMPLEMENTATION_PLAN.md`, so a custom-named file won't be picked up by the loop until renamed — surface this tradeoff when offering the option.
+Loop tooling searches for `IMPLEMENTATION_PLAN.md` at execution time.
+The user is responsible for renaming a descriptively named plan before running the loop; this does not require a question, warning, or extra approval during planning.
 
 ### Phase 5: Spec Stress-Test
 
@@ -282,10 +342,10 @@ After constructing the plan, stress-test it with fresh perspectives. This catche
 
 For each round, spawn a Task subagent (subagent_type: "general-purpose") with:
 - ONLY the plan text (the subagent has no conversation history — this is the point)
-- The prompt: "You are reviewing a feature implementation plan. Find 5-10 points that are underspecified, ambiguous, risky, or missing. Be specific — reference the exact section and explain what's unclear or could go wrong. Don't suggest rewrites — just identify the gaps."
+- The prompt: "You are reviewing a feature implementation plan. Find 5-10 points that are underspecified, ambiguous, risky, or missing. Also flag (a) implicit decisions that limit what users can do or make later work hard, and are missing from What This Plan Rules Out, and (b) any golden example or benchmark row the plan would fail. Be specific — reference the exact section and explain what's unclear or could go wrong. Don't suggest rewrites — just identify the gaps."
 
 After each round:
-1. Present the subagent's findings to the user
+1. Present the subagent's findings to the user, concisely and in plain language, each with your recommendation (address it, or skip it and why)
 2. Ask which findings to address (some may be intentional simplifications)
 3. Incorporate accepted feedback into the plan before the next round
 
@@ -310,6 +370,11 @@ Before delivering the plan, verify:
 - [ ] No vague language — "update", "improve", "fix" always paired with specifics
 - [ ] Research insights are incorporated where relevant
 - [ ] Edge cases and risks are addressed
+- [ ] Each golden example works end to end under this plan, or its failure is an approved item in What This Plan Rules Out
+- [ ] For a user-facing capability, the benchmark exists and every gap was approved by the user
+- [ ] Every cap, skip, refusal and deferral in the task text appears in What This Plan Rules Out
+- [ ] Inherited decisions that looked wrong were raised with the user, not silently kept
+- [ ] Everything shown to the user was concise, plain-language, with an example where it helped
 
 ## Anti-Patterns
 
@@ -323,3 +388,8 @@ Before delivering the plan, verify:
 | Specifying line numbers | Reference file path + function/component name |
 | Skipping research for novel features | Launch sub-agents to research competitor patterns and technical approaches |
 | Asking one question then moving on | Continue the interview until all meaningful questions are covered |
+| Validating that the design matches a spec's structure | Walk real golden examples through it and check they work |
+| Burying caps, skips and refusals inside task text | Lift them into What This Plan Rules Out for the user to decide |
+| Calling a lost capability a strength ("stricter than the reference implementations") | State what users lose and let the user choose |
+| Treating inherited behaviour as settled ("the runtime already works") | List inherited limits and challenge the ones that look wrong |
+| A question made only of jargon, with no example | Plain framing first, technical names inside it, a concrete example when it helps |

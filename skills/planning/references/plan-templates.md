@@ -4,6 +4,7 @@
 
 - [Flat List Example](#flat-list-example)
 - [Phased Plan Example](#phased-plan-example)
+- [Outcome Sections Example](#outcome-sections-example)
 - [What Makes These Work](#what-makes-these-work)
 
 ## Flat List Example
@@ -168,6 +169,34 @@ Add threaded comments to documents so collaborators can discuss specific text se
 
 **Why this works**: Phases group by system layer (data, editor, UI) with clear checkpoints. Each phase builds on the previous one. The dependency chain is explicit — you can't build the popover UI before the API and decoration plugin exist. Research directly influenced two decisions (inline popover over sidebar, decorations over marks).
 
+## Outcome Sections Example
+
+Every plan for a user-facing capability carries three outcome sections.
+Together they let the user see what the plan will and will not do before approving it.
+From a plan for installing agent skills from GitHub links:
+
+```
+## Golden Examples
+- anthropics/skills `canvas-design` (83 files, 5.5 MB, bundled fonts): installs with every file and renders using its fonts
+- anthropics/skills `pdf` (a `reference.md` beside `SKILL.md`): the agent loads `reference.md` by the path its instructions use
+- the user's `creating-sprites` (Python CLI scripts plus `requirements.txt`): runs `scripts/process_sprite.py in.png out.png` in place
+
+## Research Insights
+| Capability | Claude API | OpenAI | This plan | Gap approved? |
+|---|---|---|---|---|
+| Bundle size | 30 MB | 50 MB zip | 10 MB | yes (Postgres storage; object storage is the lever later) |
+| Binary files | kept | kept | kept | n/a |
+| Scripts run in place | yes | yes | yes, by naming the skill | n/a |
+
+## What This Plan Rules Out
+- **Skills over 10 MB** are refused at install. Example: a skill bundling model weights. Undo: move bytes to object storage (medium). User: accepted.
+- **JS/TS scripts** install but cannot run (the sandbox has Python and bash only). Example: `scripts/build.js`. Undo: add Node to the image (small). User: accepted.
+- **Skills needing API keys** fail at run time; no user secrets enter the sandbox. Example: `generate_sprite.py` reads `OPENAI_API_KEY`. Undo: a secrets broker (large). User: accepted.
+```
+
+**Why this works**: each golden example is a real, checkable case, not a hypothetical.
+Each ruled-out item states what the user loses, with an example, and records the user's own decision.
+
 ## Loop-Compatible Output Example
 
 When a plan is destined for autonomous loop execution, Phase 4b produces a flat `IMPLEMENTATION_PLAN.md` — the single, self-contained plan file (no separate rich-plan document).
@@ -179,6 +208,12 @@ Given the phased plan above (comment threads), the loop-ready output would be:
 
 ## Goal
 Add threaded comments to documents so collaborators can discuss specific text selections inline.
+
+## Golden Examples
+- A 40-page spec with 30 comments across 12 threads: every anchor survives a round of edits above it
+
+## What This Plan Rules Out
+- **Comments on images** are not supported (text selections only). Undo: node-anchored comments (medium). User: accepted.
 
 <!-- This file is the only plan document and is deleted after implementation + audit. Encode any durable rationale (e.g. "decorations not marks — survive edits") in code comments/front matter, not just here. -->
 

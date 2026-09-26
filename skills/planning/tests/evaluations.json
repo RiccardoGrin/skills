@@ -66,6 +66,23 @@
         "method": "checklist",
         "pass_threshold": 4
       }
+    },
+    {
+      "id": "eval-005",
+      "name": "Capability parity - benchmark, real samples and ruled-out list",
+      "prompt": "Plan a feature: let users install agent skills (SKILL.md folders) from a GitHub link into our assistant, which stores skills in Postgres and runs code in a Python sandbox. The existing code already loads skill text from the database.",
+      "expected_behaviors": [
+        "Benchmarks how leading products (e.g. Claude, OpenAI) handle skill bundles: file types, size limits, how scripts run",
+        "Samples and measures real public skills (file counts, sizes, binaries, files outside references/ and scripts/)",
+        "Names 2-3 real skills as golden examples that must work end to end",
+        "Raises the inherited text-only storage and script-retyping behaviour as a decision with pros, cons and a recommendation, instead of treating it as settled",
+        "Lists every cap, skipped file type and refusal in a What This Plan Rules Out section with user-visible consequences and examples, and asks the user to choose",
+        "Asks questions in plain language with concrete examples, keeping technical names inside the explanation"
+      ],
+      "scoring": {
+        "method": "checklist",
+        "pass_threshold": 5
+      }
     }
   ]
 }
