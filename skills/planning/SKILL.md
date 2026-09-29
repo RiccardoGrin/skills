@@ -13,6 +13,10 @@ DO NOT write code during planning. Only explore, research, analyze, and document
 A plan can match a spec, pass every review and still ship something far weaker than what the best products already offer.
 The checks that catch this are the golden examples, the benchmark and the "What This Plan Rules Out" list (Phases 2 and 4).
 
+**Scope by the user's job, not by the integration.**
+Read the project's mission or product bar (CLAUDE.md, AGENTS.md, README) and ask: once this ships, can the user actually finish the tasks they will bring to it, or do they hit a wall and do the work themselves?
+Example: "read LinkedIn" planned as people profiles only could not read posts, companies or schools, so most real requests failed.
+
 ## Talking to the User
 
 Planning is thorough; what the user reads must stay short and clear.
@@ -79,7 +83,8 @@ Don't ask — inform.
 **Question domains** (not exhaustive — use judgment):
 
 - Problem definition and success criteria
-- Golden examples: which real-world cases must work end to end (offer concrete candidates, e.g. three popular public examples of the thing being built)
+- User jobs: the real tasks users will bring to this feature, and every kind of object the source exposes (for a social platform: people, companies, schools, posts, media)
+- Golden examples: which real-world cases must work end to end (offer concrete candidates, e.g. three popular public examples of the thing being built). Spread them across the user jobs and object kinds, not several of the same kind
 - Ambition relative to the best existing products: match, get close, or exceed them
 - User-facing behavior and interaction design
 - Edge cases, error states, and failure modes
@@ -371,6 +376,7 @@ Before delivering the plan, verify:
 - [ ] Research insights are incorporated where relevant
 - [ ] Edge cases and risks are addressed
 - [ ] Each golden example works end to end under this plan, or its failure is an approved item in What This Plan Rules Out
+- [ ] Golden examples cover the user's real jobs and every object kind the source exposes, and each kind left out is an approved item in What This Plan Rules Out
 - [ ] For a user-facing capability, the benchmark exists and every gap was approved by the user
 - [ ] Every cap, skip, refusal and deferral in the task text appears in What This Plan Rules Out
 - [ ] Inherited decisions that looked wrong were raised with the user, not silently kept
@@ -388,6 +394,7 @@ Before delivering the plan, verify:
 | Specifying line numbers | Reference file path + function/component name |
 | Skipping research for novel features | Launch sub-agents to research competitor patterns and technical approaches |
 | Asking one question then moving on | Continue the interview until all meaningful questions are covered |
+| Scoping to the first object kind of an integration (profiles only) | List the user's real jobs and every object kind the source exposes, then cover them or approve each gap |
 | Validating that the design matches a spec's structure | Walk real golden examples through it and check they work |
 | Burying caps, skips and refusals inside task text | Lift them into What This Plan Rules Out for the user to decide |
 | Calling a lost capability a strength ("stricter than the reference implementations") | State what users lose and let the user choose |
