@@ -71,7 +71,7 @@ Pick one by name before building. The reach for "the first shape that comes to m
 |---|---|---|
 | **Feature Stack** | Full-width bands down the scroll, each an alternating text/visual split | 3-6 distinct capabilities that each deserve a real visual. Bands, never a 3-up card grid |
 | **Bento Showcase** | Asymmetric grid of mixed-span tiles, each showing one capability as a live-looking fragment | Many small features, better at a glance than in sequence |
-| **Editorial Index** | Masthead, a numbered or categorized index, generous type, hairline rules | Portfolios, agencies, publications, "who we are" |
+| **Editorial Index** | Masthead, a categorized index, generous type, hairline rules | Portfolios, agencies, publications, "who we are". Number the index only when it carries real order; this shape sits closest to the broadsheet cluster, so give it a non-editorial type or color choice |
 | **Long-Scroll Narrative** | The arc told top to bottom, one full section per beat, scroll-linked reveals | A non-obvious product that needs explaining before the pitch lands |
 | **Stat-Led** | One dominant real number, or a tight row of them, is the spine | The story is genuinely quantitative and the numbers are real |
 | **Gallery Grid** | The work is the pitch; real imagery fills the page, chrome minimal | Commerce, photography, food, travel, physical product |
@@ -109,7 +109,13 @@ The shape is the skeleton; these are the parts inside it. Two rules bind:
 
 **Two chrome patterns to avoid by default.** The wordmark-left, inline-links, button-right nav is a template signature unless the page genuinely has two or fewer destinations. The four-column Product / Company / Resources / Legal footer with a social row is the same, unless it is a real docs root.
 
-**The eyebrow-left, heading-right two-column section head is the most reliable templated-editorial tell.** Stack the eyebrow above the heading in one column, and cap eyebrows at one or two per page. Most sections do not need one at all — the identical pill eyebrow repeated above every section is a signature.
+**The eyebrow-left, heading-right two-column section head is the most reliable templated-editorial tell.** Stack the eyebrow above the heading in one column.
+**Default to none:** at most one per page on a Persuade surface, only when it adds context the heading cannot, set in sentence case, and never pill-styled, uppercase, or tracked.
+The identical eyebrow repeated above every section is a signature.
+Long Read-mode documents may use section labels where they genuinely orient the reader.
+
+**No section numbers by default.**
+01 / 02 / 03 above sections is decoration unless the sequence itself carries information the reader needs, such as setup steps.
 
 **A section headline is not a hero headline.** Cap it at roughly 50-65% of the hero's full display size, and it should read in one or two lines regardless of word count. One deliberate large mid-page statement is a legitimate moment in a Manifesto or Long-Scroll Narrative. Repeated at every section head, it is a mistake.
 
@@ -129,7 +135,7 @@ The valuable outcome becomes the headline. The subhead clarifies the mechanism. 
 
 A starting limit, not a quota to fill:
 
-- One optional eyebrow, only when it adds context the headline cannot
+- Usually no eyebrow; at most one, only when it adds context the headline cannot
 - One headline: one promise, usually 6-12 words
 - One subhead: one sentence, 16-28 words, at most two lines on desktop
 - One primary action, plus at most one secondary that serves a genuinely lower-commitment path

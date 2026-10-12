@@ -180,8 +180,6 @@ An `<h3>` inside a sidebar might be smaller than a `<p>` in a hero section. Choo
 .sidebar h3 {
   font-size: 0.75rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
   color: var(--text-muted);
 }
 

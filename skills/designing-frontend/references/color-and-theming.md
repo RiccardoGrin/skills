@@ -123,6 +123,10 @@ Ignore "color psychology" claims. What matters is legibility and contrast.
 
 ## Dark Mode / Light Mode
 
+Choose the default theme from the physical use scene, never the product category.
+Write one sentence: who uses this, where, and under what light.
+A trading desk at night and a kitchen tablet at noon force different answers; "it is a developer tool" forces nothing.
+
 ### Dark Mode Backgrounds
 
 Use 3 background shades at low lightness, zero saturation:
@@ -246,6 +250,9 @@ Use primary color shades for interactive state hierarchy:
 ```
 
 ### Gradient Restraint
+
+No gradient text: its contrast changes along the gradient, so part of every word fails, and it is a reliable generated tell.
+Carry emphasis with weight or size.
 
 In UI elements — buttons, cards, repeated components — stick to variations of a single hue. Multi-color gradients look amateurish there. Gradients spanning analogous hues, within about 30 degrees, can work for a hero or an accent surface.
 

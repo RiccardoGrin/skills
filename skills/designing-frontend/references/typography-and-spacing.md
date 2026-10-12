@@ -102,10 +102,14 @@ Justified text stretches word spaces until both edges line up. It works in speci
 
 ### Type Choices That Read as Machine-Made
 
-Four habits that signal a generated interface regardless of how good the scale is:
+Habits that signal a generated interface regardless of how good the scale is:
 
 - **Italic headings.** An all-italic display face, or an upright heading with one word italicized for emphasis, is among the most reliable tells. Headings are roman. Carry emphasis with weight, color, or a drawn underline. Italic survives only as emphasis inside running body copy.
-- **Body copy in a monospace face.** It reads as a developer template. Reserve mono for code, data, timestamps, and short technical labels, even on a deliberately technical product.
+- **Monospace as a costume.** Body copy, display headings, or decorative tracked labels set in mono to signal "technical" read as a developer template.
+  Reserve mono for code, data, timestamps, and measurements, even on a deliberately technical product.
+- **Small all-caps, letter-spaced labels.** A tiny uppercase tracked label above a heading, on a card, or as metadata is one of the most over-used generated details, in mono or any other face.
+  Set labels in sentence case and carry their role with size, weight, and color.
+  Uppercase stays for real abbreviations and acronyms.
 - **More than three font families on a page.** Display, body, and at most one outlier used in no more than two slots. The same family at different weights counts once.
 - **Display line-height below 1.0.** Tighten as size grows, but 1.0 is the floor. Below it, descenders and punctuation touch the line beneath. Verify this visually at the real weight and size — a value that is safe at 400 weight and 3rem will clip at 800 weight and 6rem.
 
@@ -115,7 +119,7 @@ Tracking is not one value applied to the whole project. Letterforms read too far
 
 - **Large display text wants negative tracking.** Around `-0.02em` at heading sizes, tightening further as size increases.
 - **Body text sits near `0`.**
-- **Small text and uppercase labels want slightly positive tracking**, roughly `0.02em` to `0.05em`, for legibility.
+- **Small text wants slightly positive tracking**, roughly `0.02em` to `0.05em`, for legibility; so does an acronym or abbreviation set in capitals.
 
 A single fixed `letter-spacing` across the project is wrong somewhere by definition.
 
@@ -123,11 +127,11 @@ A single fixed `letter-spacing` across the project is wrong somewhere by definit
 :root {
   --tracking-tight:  -0.02em;   /* display and headings */
   --tracking-normal:  0;        /* body */
-  --tracking-wide:    0.05em;   /* small caps, badges, overline labels */
+  --tracking-wide:    0.05em;   /* small text, acronyms */
 }
 
 .display { font-size: clamp(2rem, 5vw, 4rem); line-height: 1.05; letter-spacing: var(--tracking-tight); }
-.label   { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: var(--tracking-wide); }
+.label   { font-size: var(--text-xs); font-weight: 500; letter-spacing: var(--tracking-wide); }  /* sentence case, never uppercase */
 ```
 
 Build hierarchy from **weight, size, and leading as a set**, not size alone. Weight adds presence without taking more space.
@@ -558,6 +562,17 @@ Keep text selectable by default, and let `::selection` carry a little brand as l
 | Display | Marketing headlines, hero text |
 
 "Display" in a font's name does not make it a display font. Families that ship both a Display and a Text cut mean it literally: use the cut that matches the size being set. Text cuts are sturdier and more spaced for reading; display cuts are finer for large sizes.
+
+**Choose the face for the product's feel.** Type carries tone before a word is read, so the face is part of the message, not a container for it.
+Name the feel in two or three words first (precise and calm, warm and playful, confident and editorial), taken from the product's personality, then pick the face whose letterforms carry exactly that.
+Match the feel, not the subject's cliché: a children's reading app wants warm and playful, which "books, therefore serif" does not deliver.
+Test it on real copy at real sizes; a face that sounds right in a specimen can read cold or cramped in the interface.
+
+**Over-used faces need a reason.** On Persuade and Experience surfaces, some faces appear so often in generated work that they read as the default rather than a choice.
+The current set: Fraunces, Playfair Display, Cormorant, Lora, Crimson, Syne, Space Grotesk, Space Mono, DM Sans, DM Serif, Outfit, Plus Jakarta Sans, Instrument Sans, and Inter used as a display face.
+They are not banned: pick one only when it carries the named feel better than any alternative.
+The list moves as models change; the rule does not.
+Operate and Read surfaces are well served by system stacks and workhorse UI faces, Inter included.
 
 Pair for contrast, not similarity. A serif headline over a sans body reads as a deliberate split between display and reading type; two near-identical sans-serifs read as a mistake.
 

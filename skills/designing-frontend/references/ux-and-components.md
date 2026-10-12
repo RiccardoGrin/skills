@@ -250,7 +250,7 @@ Character doesn't require wild design — it shows up in small, consistent choic
 | Personality Lever | Safe/Generic | Distinctive |
 |---|---|---|
 | **Color** | Blue primary, gray neutrals | A bold or unexpected primary (coral, deep green, warm yellow) |
-| **Typography** | Inter/system font at standard sizes | A characterful font for headings (serif, geometric, monospace), or unusually large/small sizing |
+| **Typography** | An unexamined default face on a marketing page | A characterful heading face chosen for this product, or unusually large/small sizing. On Operate and Read surfaces a system or workhorse UI face is the right default, not the generic one |
 | **Spacing** | Even, predictable rhythm | Generous whitespace for calm, or tight/dense for intensity |
 | **Border radius** | 8px on everything | Sharp corners for precision, pill shapes for friendliness, mixed for character |
 | **Copy/microcopy** | "Submit", "Error occurred" | "Let's go", "Hmm, that didn't work — try again?" |
@@ -265,9 +265,21 @@ AI-generated frontends converge on the same patterns because they're statistical
 - **The gradient hero:** A full-width section with centered H1, subtitle, and CTA over a blue-to-purple gradient. Instead: consider a split layout, an image-led hero, a text-only hero with bold typography, or skip the hero entirely.
 - **The 3-column feature grid:** Three cards with icons, headings, and descriptions in a perfect row. Instead: use a 2-column layout with larger cards, a single-column with alternating image/text, or a bento grid with varied card sizes.
 - **Uniform card grids:** Every card identical size and shape. Instead: vary card sizes based on content importance, or use a masonry-like layout.
-- **The safe color palette:** Blue primary, light gray background, dark gray text. Instead: start from the product's personality — a cooking app might use warm terracotta, a finance tool might use deep navy with gold accents.
+- **The safe color palette:** Blue primary, light gray background, dark gray text. Instead: start from the product's personality — look past the category's first association, which is where every generated design lands (a cooking app reaching for warm terracotta is the cream-and-serif cluster below).
 - **Rounded-everything:** 8px border-radius on every element. Instead: pick a radius strategy that matches the personality. Sharp = precise/technical. Large rounds = playful. Mixed = intentional hierarchy.
 - **Symmetry by default:** Everything perfectly centered and evenly spaced. Real designs use alignment and spacing to create visual flow and direct attention.
+- **Polished but soulless:** stock illustrations, generic line icons, nothing a competitor could not ship unchanged.
+
+**Current clusters.** These move as models change, so treat the list as examples of the test, not the test itself.
+Generated interfaces land in one of these looks whatever the subject:
+
+- Warm cream ground, high-contrast serif display, a terracotta or signal-red accent
+- Near-black with one neon accent and glowing edges
+- Broadsheet editorial: hairline rules, italic display serif, small tracked mono labels
+- Flat saturated ink, black boxes, hard offset shadows, heavy condensed display type
+
+Each is legitimate when the brief asks for it.
+When the aesthetic was free, landing in one means the self-check failed: rework until neither the category nor the category's usual opposite predicts the result.
 
 ### Character Is Consistency
 
@@ -275,4 +287,5 @@ The goal is not to make every element unusual — it's to make a few deliberate 
 A product with one distinctive trait applied everywhere (e.g., a bold accent color, or unusually generous whitespace, or a characterful heading font) will feel more designed than one with many generic elements.
 
 Pick 1-3 personality levers from the table above and commit to them throughout the project.
+On an Operate surface, cap it at type, palette, density, and one signature move; layout, navigation, and controls stay conventional.
 Everything else can follow standard best practices from this skill.

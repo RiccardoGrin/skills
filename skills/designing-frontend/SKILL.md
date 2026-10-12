@@ -1,7 +1,7 @@
 ---
 name: designing-frontend
 description: Guides creation of high-quality frontend interfaces using proven design principles for color, typography, spacing, layout, page composition, depth, animation, gesture physics, surface craft, interface correctness, and UX. Covers both building new UIs and auditing existing ones. Use when creating web components, pages, or applications, when a design looks generic or "like every other AI app", when polishing an interface that "feels off", or when reviewing frontend code for design quality
-version: 1.3.0
+version: 1.4.0
 ---
 
 # Designing Frontend
@@ -86,9 +86,18 @@ Ask: if this product were a person, how would they dress? How would they speak?
 Ask: **what makes this design unforgettable?** What's the one thing someone will remember after closing the tab?
 
 Commit to a clear aesthetic direction. Some flavors to consider: brutally minimal, maximalist chaos, retro-futuristic, organic/natural, luxury/refined, playful/toy-like, editorial/magazine, brutalist/raw, art deco/geometric, soft/pastel, industrial/utilitarian. These are starting points — the right direction comes from the product's purpose and audience.
+Several of them (editorial, retro-futuristic, brutalist) are also where generated interfaces already cluster, so choose one only when the brief points there, never as the safe pick.
 
-Generic AI-generated frontends have tells: perfectly centered layouts, blue-to-purple gradients, identical card grids, rounded-everything, stock illustrations, polished but soulless.
+Generated frontends converge on a few looks regardless of subject; the current clusters and older tells are listed in `references/ux-and-components.md` under "Avoiding the AI Look".
+The durable test: **if someone could guess the aesthetic from the product category alone, rework it.**
+Any cluster is legitimate when the brief asks for it; landing in one when the aesthetic was free means the choice was never made.
 The antidote is intentional character — expressed through color boldness, type choices, copy tone, spacing rhythm, and interaction style.
+
+**Character is scaled by the surface's mode** (see Order of Decisions).
+On a Persuade or Experience surface it can own the page.
+On an Operate surface the product's world lends only four things: type, palette, density, and one signature move.
+It never supplies the layout, the navigation model, or the controls, and an instrument aesthetic (terminal, cockpit, control panel) on a working screen is a costume, not character.
+On a Read surface character lives in reading comfort.
 
 **Match implementation complexity to the aesthetic vision.** Maximalist designs need elaborate code with extensive animations, textures, and effects. Minimalist designs need restraint, precision, and careful attention to spacing and typography. Bold maximalism and refined minimalism both work — the key is intentionality, not intensity.
 
@@ -137,7 +146,20 @@ Never approximate a specified curve or scale value with a similar-looking one. `
 
 Some decisions constrain the ones after them, so their order is not arbitrary:
 
-1. **What the thing is** — a marketing page, an app shell, a form, a data view, an editor, a state screen. This governs density, motion, and component choice more than anything else. A marketing page can teach through scroll; a tool earns trust by getting out of the way.
+1. **What the thing is, and its mode** — a marketing page, an app shell, a form, a data view, an editor, a state screen. This governs density, motion, and component choice more than anything else. A marketing page can teach through scroll; a tool earns trust by getting out of the way.
+   Name the mode, and say which and why, as with the page shape (principle 9).
+   The mode comes from the requested **surface**, not the product: a dev tool's landing page is Persuade, a docs index is Read, and one surface has one mode.
+
+   | | Persuade | Operate | Read | Experience |
+   |---|---|---|---|---|
+   | Examples | Landing, pricing, campaign | App UI, dashboard, editor, settings | Docs, articles, help, changelog | Portfolio, gallery, showcase |
+   | Success means | The visitor understands the offer and acts | The task gets done | The reader understands | The visitor is inside the work |
+   | Character lives in | The whole page | Type, palette, density, one signature move | Reading comfort and structure | The work itself; the interface recedes |
+   | Layout and controls | Expressive where it serves the argument | Standard and conventional | Structure and wayfinding first | Led by the work |
+   | Motion | Authored, scoped to the argument | Feedback and state changes only | Near zero | Whatever the work needs |
+   | Go deeper | `page-composition.md` | App shells in `page-composition.md` | Measure and type in `typography-and-spacing.md` | `page-composition.md`, `animation-and-motion.md` |
+
+   Every mode stays behind the motion frequency gate (principle 8).
 2. **What the argument or task is** — for a page, the beats it needs; for a screen, the one job it does.
 3. **Shape** — the page shape or shell frame that carries it, picked by name.
 4. **Layout, type, color** — the token layer. Color last of the three, because it is chosen against real type and real surfaces.
@@ -163,6 +185,8 @@ Load the relevant reference file for detailed criteria on any failing item.
 - [ ] One intentional rule-break exists; the page is not uniformly safe
 - [ ] No hand-built fake browser, phone, or IDE chrome
 - [ ] Every metric, quote, and logo is real, or honestly marked as a placeholder
+- [ ] No eyebrow label above a heading unless it adds context the heading cannot; never one repeated above every section
+- [ ] No section numbers (01 / 02 / 03) unless the sequence itself carries information
 
 ### Color & Theming
 - [ ] Colors defined as CSS variables or design tokens, not hardcoded
@@ -173,13 +197,17 @@ Load the relevant reference file for detailed criteria on any failing item.
 - [ ] No dark panel left with dark text; lightness inversion carries to nested children
 - [ ] Accent stays an accent, roughly 5% of a viewport or less
 - [ ] Dark mode support (if applicable) uses proper shade inversion
+- [ ] Light or dark chosen from the physical use scene, not from the product category
+- [ ] No gradient text
 
 ### Typography & Spacing
 - [ ] Consistent type scale (not arbitrary font sizes)
 - [ ] Single font family (or deliberate pairing with clear roles); at most three families on a page
 - [ ] Line height inversely proportional to font size, with 1.0 as the floor on display type
 - [ ] No italic headings; emphasis carried by weight, color, or an underline
-- [ ] Body copy is not set in a monospace face
+- [ ] Monospace only for code, data, and measurements; never body copy or a "technical" costume on headings and labels
+- [ ] No small all-caps, letter-spaced labels; labels and metadata in sentence case
+- [ ] Typeface chosen for the product's feel, named in a few words before picking
 - [ ] Long-form text capped at 60-75 characters per line
 - [ ] Nothing below 18px set lighter than weight 400
 - [ ] Anything wrapping to three or more lines has line-height 1.4 or more
@@ -221,6 +249,8 @@ Load the relevant reference file for detailed criteria on any failing item.
 - [ ] Images carry a pure black/white 10% outline, never a tinted one
 - [ ] Icon stroke weight matches adjacent text weight; one icon library per surface
 - [ ] Icons still legible at their smallest render size
+- [ ] No colored `border-left`/`border-right` above 1px as a card, callout, or list-item accent
+- [ ] Browser-drawn surfaces themed from the palette: selection, caret, scrollbars, focus ring, underline offset, tabular numerals
 
 ### Internationalization & Device
 - [ ] Direction-dependent CSS uses logical properties, not `left`/`right`
@@ -272,7 +302,7 @@ Load the relevant reference file for detailed criteria on any failing item.
 
 ## Before You Finish
 
-Score the work 1-5 on each of six axes before handing it back. Anything below 3 gets a revision pass — catching a weakness here is far cheaper than catching it in a full review. Two passes is normal. A third usually means the brief is underspecified, not the design.
+Score the work 1-5 on each of six axes before handing it back, judged against the bar of the surface's mode: an Operate screen scores high on Philosophy and Specificity through precise details and one signature move, not through a reinvented layout. Anything below 3 gets a revision pass — catching a weakness here is far cheaper than catching it in a full review. Two passes is normal. A third usually means the brief is underspecified, not the design.
 
 | Axis | What you are scoring |
 |---|---|
@@ -330,6 +360,13 @@ End with **Block** when any `HIGH` remains, **Approve** otherwise, leaving the r
 | A hero carrying feature chips, metric rails, and floating badges | One promise, one subhead, one action, one visual; the rest goes below the fold |
 | Every section padded to the same value | Weight the padding by the section's role in the page |
 | An italic heading, or emphasis by italicizing one word in it | Emphasis by weight, color, or an underline |
+| Gradient text | Emphasis by weight or size |
+| Small uppercase, letter-spaced labels above headings or as metadata | Sentence case at the label's size and weight |
+| A colored `border-left` stripe on cards, callouts, or alerts | A tinted surface, an icon, or the heading carries the status |
+| Section numbers 01 / 02 / 03 on sections that are not a sequence | Let the headings carry the structure |
+| Selection, caret, and scrollbars left at browser defaults | Theme them from the palette |
+| Dark because the product is "technical", light because it is "friendly" | Decide from who uses it, where, under what light |
+| A terminal or cockpit look on a working screen | The product's world lends type, palette, density, and one signature move only |
 | A hand-drawn fake browser bar or phone frame | A real screenshot in a plain frame, or no chrome |
 | Invented metrics or testimonials filling a proof section | Real evidence, an honest placeholder, or a shape that doesn't need them |
 | Contrast checked once, on body text over background | Check every pairing the build introduces, button labels especially |

@@ -192,13 +192,19 @@ Hardcoded fills inside the SVG (`fill="#666"`) break this. Strip them to `curren
 
 ### Outline default, fill active
 
+### No colored side stripe
+
+A colored `border-left` or `border-right` above 1px on a card, list item, callout, or alert is one of the most common generated tells.
+Never use one.
+Carry status with a tinted surface, an icon, or the heading, and keep borders for structure as the table above sets out.
+
 Where a set ships both variants, use them as a state pair, never interchangeably. Outline is the resting state; fill marks selected, toggled, liked, active. If everything is filled, the active state has no signal left to use.
 
 The swap between variants should cross-fade — exact values in the contextual icon animation section of `animation-and-motion.md`.
 
 ### Never an emoji standing in for an icon
 
-An emoji used as a feature, step, or value icon is an instant tell. It also renders differently on every platform, so it is not a design decision you actually control. Use the project's icon set, a built SVG, or drop the icon and lead with the visual.
+An emoji or a unicode glyph (→ ✦ ● ★) used as a feature, step, or value icon is an instant tell. It also renders differently on every platform, so it is not a design decision you actually control. Use the project's icon set, a built SVG, or drop the icon and lead with the visual.
 
 ### Never hand-build fake chrome
 
@@ -230,6 +236,21 @@ Under `dir="rtl"`, flip only the glyphs whose meaning depends on reading directi
 Analyse composite icons part by part — a badge or slash overlay may hold its position while the base glyph flips.
 
 ---
+
+## Surfaces the Browser Draws
+
+The parts nobody designed still ship with the design: text selection, the text caret, scrollbars, focus rings, link underlines, and numerals in data.
+Left at browser defaults they belong to no design system, and they are the detail generated interfaces skip most reliably.
+Theme each from the palette:
+
+| Surface | Set | Detail |
+|---|---|---|
+| Selection | `::selection` | `typography-and-spacing.md`, "Keep text selectable" |
+| Caret | `caret-color` | The accent, or the text color on accent fields |
+| Scrollbars | `color-scheme`, then `scrollbar-color` | `color-and-theming.md`; never hide a scrollbar that signals scrollable content |
+| Focus ring | `:focus-visible` outline | `interface-quality.md` |
+| Underlines | `text-underline-offset`, `text-decoration-thickness` | `typography-and-spacing.md` |
+| Numerals in data | `font-variant-numeric: tabular-nums` | `typography-and-spacing.md`, "Rendering Details" |
 
 ## Quick Reference
 
